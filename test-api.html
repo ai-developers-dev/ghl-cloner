@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Test</h1>
+    <button onclick="testAPI()">Test API</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function testAPI() {
+            const output = document.getElementById('output');
+            output.textContent = 'Testing...\n';
+
+            try {
+                const url = 'http://localhost:3000/api/validate-license?license_key=GHLC-DOUG-ADMN-2024';
+                output.textContent += 'Fetching: ' + url + '\n';
+
+                const response = await fetch(url);
+                output.textContent += 'Status: ' + response.status + '\n';
+
+                const data = await response.json();
+                output.textContent += 'Response: ' + JSON.stringify(data, null, 2);
+            } catch (err) {
+                output.textContent += 'ERROR: ' + err.message + '\n';
+                output.textContent += 'Full error: ' + err.toString();
+            }
+        }
+    </script>
+</body>
+</html>
