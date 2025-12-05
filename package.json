@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "ghl-cloner",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -11,9 +11,9 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.5.3",
-    "next": "16.0.5",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "next": "16.0.7",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
     "resend": "^6.5.2",
     "stripe": "^20.0.0"
   },
@@ -22,10 +22,10 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "dotenv": "^17.2.3",
+    "dotenv": "^16.4.5",
     "eslint": "^9",
-    "eslint-config-next": "16.0.5",
-    "tailwindcss": "^4",
+    "eslint-config-next": "16.0.7",
+    "tailwindcss": "^3.4.0",
     "typescript": "^5"
   }
 }
