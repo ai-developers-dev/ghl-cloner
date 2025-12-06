@@ -1,255 +1,138 @@
-'use client';
+import ToolCard from '@/components/ToolCard';
+import Link from 'next/link';
 
-import { useState, useCallback } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import {
-  EmbeddedCheckoutProvider,
-  EmbeddedCheckout
-} from '@stripe/react-stripe-js';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-
-type PricingTier = 'starter' | 'basic' | 'professional' | 'agency' | 'enterprise';
+const tools = [
+  {
+    icon: '📋',
+    title: 'Page Cloner',
+    description: 'Clone any GoHighLevel page in seconds. Copy funnels, websites, and landing pages with one click.',
+    status: 'available' as const,
+    href: '/cloner',
+  },
+  {
+    icon: '📞',
+    title: 'Contact Buttons',
+    description: 'Add floating contact buttons to any GHL page. Phone, SMS, WhatsApp, and more.',
+    status: 'coming-soon' as const,
+  },
+  {
+    icon: '🗺️',
+    title: 'Google Maps',
+    description: 'Embed interactive Google Maps on your GHL pages with custom styling and markers.',
+    status: 'coming-soon' as const,
+  },
+  {
+    icon: '🏠',
+    title: 'Zillow Links',
+    description: 'Add property links and Zillow integration for real estate funnels and websites.',
+    status: 'coming-soon' as const,
+  },
+  {
+    icon: '📱',
+    title: 'Dialer',
+    description: 'Click-to-call functionality with tracking and analytics for your GHL pages.',
+    status: 'coming-soon' as const,
+  },
+  {
+    icon: '✨',
+    title: 'More Coming',
+    description: "We're constantly building new tools to help GHL agencies save time and grow faster.",
+    status: 'coming-soon' as const,
+  },
+];
 
 export default function HomePage() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [selectedTier, setSelectedTier] = useState<PricingTier>('professional');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-
-  const features = [
-    { icon: '⚡', title: 'Instant Cloning', desc: 'Copy any page with a single click.' },
-    { icon: '🎯', title: 'Perfect Accuracy', desc: "Uses GHL's native API to clone exactly." },
-    { icon: '🛡️', title: 'Secure & Private', desc: 'Your data never leaves GHL servers.' },
-    { icon: '🌐', title: 'Works Everywhere', desc: 'Clone from any public GHL page.' },
-    { icon: '⏱️', title: 'Save Hours', desc: 'What took 2-4 hours now takes 30 seconds.' },
-    { icon: '💳', title: 'Pay Per Clone', desc: 'No subscriptions. Buy credits when needed.' },
-  ];
-
-  const pricing: { tier: PricingTier; name: string; credits: number; price: number; perCredit: string; popular?: boolean; savings?: string }[] = [
-    { tier: 'starter', name: 'Starter', credits: 2, price: 25, perCredit: '12.50' },
-    { tier: 'basic', name: 'Basic', credits: 10, price: 125, perCredit: '12.50' },
-    { tier: 'professional', name: 'Professional', credits: 20, price: 200, perCredit: '10.00', popular: true, savings: '20%' },
-    { tier: 'agency', name: 'Agency', credits: 50, price: 375, perCredit: '7.50', savings: '40%' },
-    { tier: 'enterprise', name: 'Enterprise', credits: 100, price: 500, perCredit: '5.00', savings: '60%' },
-  ];
-
-  const faqs = [
-    { q: 'How does it work?', a: "It uses GoHighLevel's internal cloning API. When you paste, it clones the source page into your funnel." },
-    { q: 'Is this safe?', a: "Yes! We use GHL's official internal API - the same one their own features use." },
-    { q: 'Do credits expire?', a: 'No! Your credits never expire. Use them whenever you want.' },
-    { q: 'What if paste fails?', a: "You won't be charged. Credits only deducted on successful clones." },
-  ];
-
-  const handleGetStarted = async (tier: PricingTier) => {
-    setSelectedTier(tier);
-    setShowCheckoutModal(true);
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout');
-      }
-
-      if (data.clientSecret) {
-        setClientSecret(data.clientSecret);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTierChange = async (tier: PricingTier) => {
-    setSelectedTier(tier);
-    setClientSecret(null);
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout');
-      }
-
-      if (data.clientSecret) {
-        setClientSecret(data.clientSecret);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const closeCheckout = () => {
-    setShowCheckoutModal(false);
-    setClientSecret(null);
-    setError('');
-  };
-
-  const selectedPricing = pricing.find(p => p.tier === selectedTier);
-
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-bold">G</div>
-            <span className="font-bold text-lg">GHL Cloner</span>
-          </div>
-          <button
-            onClick={() => handleGetStarted('professional')}
-            className="px-5 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg font-semibold text-sm"
-          >
-            Get Started
-          </button>
-        </div>
-      </nav>
-
       {/* Hero Section */}
       <section className="py-20 px-4 text-center">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-sm mb-8">
-            <span>✨</span> Works with all GHL accounts
+            <span>🚀</span> Professional GHL Extensions
           </div>
-          <h1 className="text-5xl font-bold mb-6 leading-tight">
-            Clone Any GHL Page in{' '}
-            <span className="bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">Seconds</span>
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            GHL Tools That{' '}
+            <span className="bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">
+              Save You Hours
+            </span>
           </h1>
-          <p className="text-lg text-slate-400 mb-10 max-w-xl mx-auto">
-            Stop rebuilding pages from scratch. Copy any GoHighLevel funnel or website and paste it directly into your account.
+          <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">
+            Professional GoHighLevel extensions for agencies. Clone pages, add contact buttons, embed maps, and more.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
-            <button
-              onClick={() => handleGetStarted('professional')}
+            <Link
+              href="/cloner"
               className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold text-lg shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-shadow"
             >
-              Get Started Now →
-            </button>
+              Try Page Cloner →
+            </Link>
             <a
-              href="#pricing"
+              href="#tools"
               className="px-8 py-4 bg-slate-800 border border-slate-700 rounded-xl font-semibold text-lg hover:bg-slate-700 transition-colors"
             >
-              View Pricing
+              View All Tools
             </a>
           </div>
-          <div className="grid grid-cols-3 gap-6 mt-16 pt-10 border-t border-slate-800">
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-10 px-4 border-y border-slate-800 bg-slate-900/30">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-3 gap-6 text-center">
             <div>
               <div className="text-3xl font-bold text-emerald-400">10,000+</div>
               <div className="text-slate-500 text-sm">Pages Cloned</div>
             </div>
             <div>
               <div className="text-3xl font-bold text-emerald-400">500+</div>
-              <div className="text-slate-500 text-sm">Happy Users</div>
+              <div className="text-slate-500 text-sm">Happy Agencies</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-emerald-400">&lt;30s</div>
-              <div className="text-slate-500 text-sm">Clone Time</div>
+              <div className="text-3xl font-bold text-emerald-400">6</div>
+              <div className="text-slate-500 text-sm">Powerful Tools</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-4 bg-slate-900/50">
+      {/* Tools Grid Section */}
+      <section id="tools" className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Why Agencies Love It</h2>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Our Tools</h2>
+            <p className="text-slate-400 max-w-xl mx-auto">
+              Everything you need to supercharge your GoHighLevel workflow. More tools launching soon.
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f, i) => (
-              <div key={i} className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                <div className="text-3xl mb-3">{f.icon}</div>
-                <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
-                <p className="text-slate-400 text-sm">{f.desc}</p>
-              </div>
+            {tools.map((tool, index) => (
+              <ToolCard
+                key={index}
+                icon={tool.icon}
+                title={tool.title}
+                description={tool.description}
+                status={tool.status}
+                href={tool.href}
+              />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">Simple Pricing</h2>
-          <p className="text-slate-400 text-center mb-12">Buy credits, use them whenever. No subscriptions.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {pricing.map((p, i) => (
-              <div
-                key={i}
-                className={`rounded-xl p-5 relative ${
-                  p.popular ? 'bg-emerald-500/10 border-2 border-emerald-500' : 'bg-slate-900 border border-slate-800'
-                }`}
-              >
-                {p.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-emerald-500 text-xs font-bold rounded-full">
-                    POPULAR
-                  </div>
-                )}
-                <div className={`text-center mb-4 ${p.popular ? 'pt-2' : ''}`}>
-                  <h3 className="font-semibold mb-1">{p.name}</h3>
-                  <div className="text-3xl font-bold">${p.price}</div>
-                  <div className="text-xs text-slate-500">${p.perCredit}/credit</div>
-                  {p.savings && (
-                    <span className="inline-block mt-2 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">
-                      Save {p.savings}
-                    </span>
-                  )}
-                </div>
-                <div className="bg-slate-800 rounded-lg p-2 text-center mb-4">🪙 {p.credits} Credits</div>
-                <button
-                  onClick={() => handleGetStarted(p.tier)}
-                  className={`w-full py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                    p.popular
-                      ? 'bg-emerald-500 hover:bg-emerald-400'
-                      : 'bg-slate-800 hover:bg-slate-700'
-                  }`}
-                >
-                  Get Started
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
+      {/* CTA Section */}
       <section className="py-20 px-4 bg-slate-900/50">
-        <div className="max-w-xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">FAQ</h2>
-          <div className="flex flex-col gap-3">
-            {faqs.map((f, i) => (
-              <div key={i} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full px-5 py-4 flex justify-between items-center text-left font-medium"
-                >
-                  <span>{f.q}</span>
-                  <span className={`transition-transform ${openFaq === i ? 'rotate-180' : ''}`}>▼</span>
-                </button>
-                {openFaq === i && <div className="px-5 pb-4 text-slate-400">{f.a}</div>}
-              </div>
-            ))}
-          </div>
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to Save Hours?</h2>
+          <p className="text-slate-400 mb-8">
+            Start with our Page Cloner - the fastest way to copy any GHL page. No subscriptions, just buy credits when you need them.
+          </p>
+          <Link
+            href="/cloner"
+            className="inline-flex px-8 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold text-lg shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-shadow"
+          >
+            Get Started with Page Cloner →
+          </Link>
         </div>
       </section>
 
@@ -257,8 +140,10 @@ export default function HomePage() {
       <footer className="border-t border-slate-800 py-8 px-4">
         <div className="max-w-6xl mx-auto flex flex-col items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-bold text-sm">G</div>
-            <span className="font-bold">GHL Cloner</span>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-bold text-sm">
+              HE
+            </div>
+            <span className="font-bold">HLExtras</span>
           </div>
           <div className="flex gap-6 items-center">
             <a href="#" className="text-slate-500 text-sm hover:text-slate-300">Privacy</a>
@@ -271,94 +156,9 @@ export default function HomePage() {
               🔐 Admin
             </a>
           </div>
-          <div className="text-slate-500 text-sm">© 2024 GHL Cloner. All rights reserved.</div>
+          <div className="text-slate-500 text-sm">© 2024 HLExtras. All rights reserved.</div>
         </div>
       </footer>
-
-      {/* Stripe Checkout Modal with Package Selector */}
-      {showCheckoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            onClick={closeCheckout}
-          />
-
-          {/* Checkout Modal */}
-          <div className="relative bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl">
-            {/* Header with package selector and close button */}
-            <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-bold text-sm">G</div>
-                  <span className="font-semibold text-white">GHL Cloner</span>
-                </div>
-                <button
-                  onClick={closeCheckout}
-                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Package Selector */}
-              <div className="grid grid-cols-5 gap-1 bg-slate-700/50 p-1 rounded-lg">
-                {pricing.map((p) => (
-                  <button
-                    key={p.tier}
-                    onClick={() => !loading && handleTierChange(p.tier)}
-                    disabled={loading}
-                    className={`py-2 px-1 rounded-md text-xs font-medium transition-all ${
-                      selectedTier === p.tier
-                        ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg'
-                        : 'text-slate-300 hover:bg-slate-600/50'
-                    } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <div className="font-bold">${p.price}</div>
-                    <div className="text-[10px] opacity-80">{p.credits} credits</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Error message */}
-            {error && (
-              <div className="mx-4 mt-4 p-3 bg-red-100 border border-red-300 rounded-lg text-red-700 text-sm">
-                {error}
-              </div>
-            )}
-
-            {/* Loading state */}
-            {loading && (
-              <div className="flex items-center justify-center py-20">
-                <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-
-            {/* Embedded Checkout - hide product info with CSS */}
-            {!loading && clientSecret && (
-              <div
-                className="overflow-auto checkout-hide-product"
-                style={{ maxHeight: 'calc(90vh - 140px)' }}
-              >
-                <style>{`
-                  .checkout-hide-product iframe {
-                    margin-top: -180px;
-                  }
-                `}</style>
-                <EmbeddedCheckoutProvider
-                  stripe={stripePromise}
-                  options={{ clientSecret }}
-                >
-                  <EmbeddedCheckout />
-                </EmbeddedCheckoutProvider>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Header from "@/components/Header";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GHL Page Cloner - Clone Any GoHighLevel Page in Seconds",
-  description: "Stop rebuilding pages from scratch. Copy any GoHighLevel funnel or website and paste it directly into your account.",
+  title: "HLExtras - Professional GHL Tools for Agencies",
+  description: "Professional GoHighLevel extensions for agencies. Clone pages, add contact buttons, embed maps, and more.",
 };
 
 export default function RootLayout({
@@ -27,6 +28,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Header />
         {children}
       </body>
     </html>

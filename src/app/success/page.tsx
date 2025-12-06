@@ -107,18 +107,6 @@ function SuccessContent() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-bold">
-              G
-            </div>
-            <span className="font-bold text-lg">GHL Cloner</span>
-          </Link>
-        </div>
-      </nav>
-
       {/* Success Content */}
       <div className="max-w-2xl mx-auto px-4 py-16">
         {/* Success Header */}
@@ -211,7 +199,7 @@ function SuccessContent() {
           <div className="space-y-4">
             {[
               'Install the Chrome extension from the button above',
-              'Click the GHL Cloner icon in your browser toolbar',
+              'Click the HLExtras icon in your browser toolbar',
               'Enter your license key when prompted',
               'Navigate to any GHL funnel page you want to copy',
               'Click "Copy" to capture the page',
