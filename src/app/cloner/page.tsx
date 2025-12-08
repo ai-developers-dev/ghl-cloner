@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   EmbeddedCheckoutProvider,
@@ -8,6 +8,8 @@ import {
 } from '@stripe/react-stripe-js';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+
+const AFFILIATE_REF_KEY = 'hlextras_affiliate_ref';
 
 type PricingTier = 'starter' | 'basic' | 'professional' | 'agency' | 'enterprise';
 
@@ -18,6 +20,25 @@ export default function ClonerPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+
+  // Capture affiliate ref parameter on page load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    if (ref) {
+      // Store in localStorage for use during checkout
+      localStorage.setItem(AFFILIATE_REF_KEY, ref);
+      console.log('Affiliate ref captured:', ref);
+    }
+  }, []);
+
+  // Helper to get affiliate code from localStorage
+  const getAffiliateCode = (): string | null => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(AFFILIATE_REF_KEY);
+    }
+    return null;
+  };
 
   const features = [
     { icon: '⚡', title: 'Instant Cloning', desc: 'Copy any page with a single click.' },
@@ -50,10 +71,11 @@ export default function ClonerPage() {
     setLoading(true);
 
     try {
+      const affiliateCode = getAffiliateCode();
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({ tier, affiliateCode }),
       });
 
       const data = await response.json();
@@ -79,10 +101,11 @@ export default function ClonerPage() {
     setError('');
 
     try {
+      const affiliateCode = getAffiliateCode();
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({ tier, affiliateCode }),
       });
 
       const data = await response.json();

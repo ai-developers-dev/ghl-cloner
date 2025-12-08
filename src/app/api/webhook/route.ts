@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe, getTierByPriceId } from '@/lib/stripe';
-import { getUserByEmail, createUser, addCredits } from '@/lib/supabase';
+import { getUserByEmail, createUser, addCredits, updateUser, getAffiliateByCode, logAffiliateCommission, updateAffiliate, logSale, getAllSalesReports } from '@/lib/supabase';
 import { sendLicenseEmail, sendAdminNotificationEmail } from '@/lib/email';
 import Stripe from 'stripe';
 
@@ -145,6 +145,91 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
     }
   }
 
+  // Handle affiliate tracking
+  const affiliateCode = metadata.affiliate_code;
+  let saleAffiliateId: string | undefined;
+  let saleAffiliateCommission = 0;
+
+  if (affiliateCode && user) {
+    console.log('Processing affiliate commission for code:', affiliateCode);
+
+    try {
+      const affiliate = await getAffiliateByCode(affiliateCode);
+
+      if (affiliate && affiliate.status === 'active') {
+        console.log('Found active affiliate:', { id: affiliate.id, name: affiliate.name, rate: affiliate.commission_rate });
+
+        // Update user with affiliate_id (link user to affiliate)
+        await updateUser(user.id, { affiliate_id: affiliate.id });
+        console.log('User linked to affiliate');
+
+        // Calculate and log commission
+        const purchaseAmount = session.amount_total || 0; // cents
+        const commissionAmount = Math.round(purchaseAmount * affiliate.commission_rate);
+
+        // Store for sale record
+        saleAffiliateId = affiliate.id;
+        saleAffiliateCommission = commissionAmount;
+
+        const commissionResult = await logAffiliateCommission({
+          affiliate_id: affiliate.id,
+          user_id: user.id,
+          purchase_amount: purchaseAmount,
+          commission_amount: commissionAmount,
+          stripe_session_id: session.id,
+          status: 'pending',
+        });
+
+        if (commissionResult.success) {
+          console.log(`Affiliate commission logged: ${affiliate.code} earns $${(commissionAmount / 100).toFixed(2)}`);
+
+          // Update affiliate's total_earned
+          await updateAffiliate(affiliate.id, {
+            total_earned: affiliate.total_earned + commissionAmount,
+          });
+          console.log('Affiliate total_earned updated');
+        } else {
+          console.error('Failed to log affiliate commission:', commissionResult.error);
+        }
+      } else if (affiliate) {
+        console.log('Affiliate found but inactive:', affiliateCode);
+      } else {
+        console.log('No affiliate found for code:', affiliateCode);
+      }
+    } catch (affError) {
+      // Don't fail the whole webhook for affiliate tracking issues
+      console.error('Error processing affiliate tracking:', affError);
+    }
+  }
+
+  // Log sale to sales table for reporting
+  if (user) {
+    console.log('Logging sale to sales table...');
+    try {
+      const saleResult = await logSale({
+        user_id: user.id,
+        stripe_session_id: session.id,
+        stripe_payment_intent: typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : session.payment_intent?.id,
+        amount: session.amount_total || 0,
+        credits: credits,
+        tier: tierInfo?.name || tierName,
+        affiliate_id: saleAffiliateId,
+        affiliate_commission: saleAffiliateCommission,
+      });
+
+      if (saleResult.success) {
+        console.log('Sale logged successfully:', saleResult.sale?.id);
+      } else {
+        console.error('Failed to log sale:', saleResult.error);
+      }
+    } catch (saleError) {
+      // Don't fail the whole webhook for sale logging issues
+      console.error('Error logging sale:', saleError);
+    }
+  }
+
   // Send confirmation email to customer
   if (user) {
     console.log('Sending license email to:', user.email);
@@ -162,15 +247,40 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
       console.log('License email sent successfully');
     }
 
-    // Send admin notification email
-    console.log('Sending admin notification...');
+    // Send admin notification email with sales reports
+    console.log('Sending admin notification with sales reports...');
     const amount = session.amount_total || 0;
+
+    // Fetch current sales reports for the email
+    let salesReports;
+    try {
+      salesReports = await getAllSalesReports();
+      console.log('Sales reports fetched:', {
+        daily: { sales: salesReports.daily.salesCount, revenue: salesReports.daily.totalRevenue },
+        monthly: { sales: salesReports.monthly.salesCount, revenue: salesReports.monthly.totalRevenue },
+      });
+    } catch (reportError) {
+      console.error('Failed to fetch sales reports for email:', reportError);
+    }
+
     const adminResult = await sendAdminNotificationEmail({
       customerEmail: user.email,
       customerName: user.name,
       tierName: tierInfo?.name || tierName,
       credits: credits,
       amount: amount,
+      dailyReport: salesReports?.daily ? {
+        salesCount: salesReports.daily.salesCount,
+        totalRevenue: salesReports.daily.totalRevenue,
+        totalCredits: salesReports.daily.totalCredits,
+        totalAffiliateCommissions: salesReports.daily.totalAffiliateCommissions,
+      } : undefined,
+      monthlyReport: salesReports?.monthly ? {
+        salesCount: salesReports.monthly.salesCount,
+        totalRevenue: salesReports.monthly.totalRevenue,
+        totalCredits: salesReports.monthly.totalCredits,
+        totalAffiliateCommissions: salesReports.monthly.totalAffiliateCommissions,
+      } : undefined,
     });
 
     if (!adminResult.success) {

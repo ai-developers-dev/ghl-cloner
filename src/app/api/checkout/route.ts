@@ -5,7 +5,7 @@ import { getUserByEmail } from '@/lib/supabase';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { tier } = body as { tier: PricingTier };
+    const { tier, affiliateCode } = body as { tier: PricingTier; affiliateCode?: string };
 
     // Validate inputs
     if (!tier || !PRICING_TIERS[tier]) {
@@ -16,6 +16,11 @@ export async function POST(request: NextRequest) {
 
     // Get the base URL for redirects
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
+    // Log affiliate code if present
+    if (affiliateCode) {
+      console.log('Checkout with affiliate code:', affiliateCode);
+    }
 
     // Create Stripe Checkout Session with embedded mode for popup
     // Stripe will collect email and name during checkout
@@ -32,6 +37,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         tier: tier,
         credits: selectedTier.credits.toString(),
+        affiliate_code: affiliateCode || '', // Pass affiliate code to webhook
       },
       return_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
     });
