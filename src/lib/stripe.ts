@@ -8,37 +8,37 @@ export const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2025-11-17.clover',
 });
 
-// Pricing configuration with Stripe price IDs
+// Pricing configuration with Stripe price IDs (Live)
 export const PRICING_TIERS = {
   starter: {
     name: 'Starter',
     credits: 2,
-    price: 25,
-    priceId: 'price_1Sb80AJzlQVdA6LorcLeporQ',
+    price: 20,
+    priceId: 'price_1ScBVfFOUSo8u0nUczYtg8Xg',
   },
   basic: {
     name: 'Basic',
-    credits: 10,
-    price: 125,
-    priceId: 'price_1Sb80eJzlQVdA6LoviqmyWKb',
+    credits: 5,
+    price: 45,
+    priceId: 'price_1ScBWOFOUSo8u0nU8puSTyvB',
   },
   professional: {
     name: 'Professional',
-    credits: 20,
-    price: 200,
-    priceId: 'price_1Sb81xJzlQVdA6LoJ2Az1ZJN',
+    credits: 10,
+    price: 80,
+    priceId: 'price_1ScBYGFOUSo8u0nUhJHW9efr',
   },
   agency: {
     name: 'Agency',
-    credits: 50,
-    price: 375,
-    priceId: 'price_1Sb82MJzlQVdA6LoGBCt6Eo1',
+    credits: 25,
+    price: 150,
+    priceId: 'price_1ScBYyFOUSo8u0nU14QX2IOP',
   },
   enterprise: {
     name: 'Enterprise',
-    credits: 100,
-    price: 500,
-    priceId: 'price_1Sb82oJzlQVdA6LoLDciBXC4',
+    credits: 50,
+    price: 250,
+    priceId: 'price_1ScBZKFOUSo8u0nUUtxsUafy',
   },
 } as const;
 

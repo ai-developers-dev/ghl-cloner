@@ -50,11 +50,11 @@ export default function ClonerPage() {
   ];
 
   const pricing: { tier: PricingTier; name: string; credits: number; price: number; perCredit: string; popular?: boolean; savings?: string }[] = [
-    { tier: 'starter', name: 'Starter', credits: 2, price: 25, perCredit: '12.50' },
-    { tier: 'basic', name: 'Basic', credits: 10, price: 125, perCredit: '12.50' },
-    { tier: 'professional', name: 'Professional', credits: 20, price: 200, perCredit: '10.00', popular: true, savings: '20%' },
-    { tier: 'agency', name: 'Agency', credits: 50, price: 375, perCredit: '7.50', savings: '40%' },
-    { tier: 'enterprise', name: 'Enterprise', credits: 100, price: 500, perCredit: '5.00', savings: '60%' },
+    { tier: 'starter', name: 'Starter', credits: 2, price: 20, perCredit: '10.00' },
+    { tier: 'basic', name: 'Basic', credits: 5, price: 45, perCredit: '9.00', savings: '10%' },
+    { tier: 'professional', name: 'Professional', credits: 10, price: 80, perCredit: '8.00', popular: true, savings: '20%' },
+    { tier: 'agency', name: 'Agency', credits: 25, price: 150, perCredit: '6.00', savings: '40%' },
+    { tier: 'enterprise', name: 'Enterprise', credits: 50, price: 250, perCredit: '5.00', savings: '50%' },
   ];
 
   const faqs = [
