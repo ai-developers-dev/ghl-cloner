@@ -19,9 +19,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Payment not completed' }, { status: 400 });
     }
 
-    const email = session.metadata?.email || session.customer_email;
+    // Email can be in customer_details (from checkout form), customer_email, or metadata
+    const email = session.customer_details?.email || session.customer_email || session.metadata?.email;
 
     if (!email) {
+      console.error('No email found in session:', {
+        customer_details: session.customer_details,
+        customer_email: session.customer_email,
+        metadata: session.metadata,
+      });
       return NextResponse.json({ error: 'No email found' }, { status: 400 });
     }
 
