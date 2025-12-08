@@ -96,14 +96,31 @@ export async function getUser(licenseKey: string): Promise<User | null> {
 
 // Get user by email
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=*`, {
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+  try {
+    console.log('getUserByEmail: Looking up user:', email);
+
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=*`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('getUserByEmail failed:', response.status, errorText);
+      return null;
     }
-  });
-  const data = await response.json();
-  return Array.isArray(data) && data.length > 0 ? data[0] : null;
+
+    const data = await response.json();
+    const user = Array.isArray(data) && data.length > 0 ? data[0] : null;
+
+    console.log('getUserByEmail result:', user ? { id: user.id, email: user.email } : 'not found');
+    return user;
+  } catch (error) {
+    console.error('getUserByEmail exception:', error);
+    return null;
+  }
 }
 
 // Add credits to existing user (for purchases)
@@ -215,30 +232,57 @@ export async function useCredit(licenseKey: string, funnelId: string, stepId: st
 export async function createUser(data: CreateUserData): Promise<{ success: boolean; user?: User; error?: string }> {
   const license_key = generateLicenseKey();
 
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/users`, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
-    },
-    body: JSON.stringify({
-      license_key,
-      email: data.email,
-      name: data.name,
-      credits: data.credits || 0,
-      status: data.status || 'active'
-    })
+  console.log('createUser: Creating user with data:', {
+    email: data.email,
+    name: data.name,
+    credits: data.credits,
+    license_key_prefix: license_key.substring(0, 9) + '...'
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    return { success: false, error: error.message || 'Failed to create user' };
-  }
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/users`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        license_key,
+        email: data.email,
+        name: data.name,
+        credits: data.credits || 0,
+        status: data.status || 'active'
+      })
+    });
 
-  const users = await response.json();
-  return { success: true, user: users[0] };
+    // Check response status BEFORE parsing JSON
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('createUser failed:', response.status, errorText);
+      return { success: false, error: `Database error: ${response.status} - ${errorText}` };
+    }
+
+    const users = await response.json();
+
+    if (!Array.isArray(users) || users.length === 0) {
+      console.error('createUser: Supabase returned empty result');
+      return { success: false, error: 'User creation returned no data' };
+    }
+
+    console.log('createUser: User created successfully:', {
+      id: users[0].id,
+      email: users[0].email,
+      license_key: users[0].license_key,
+      credits: users[0].credits
+    });
+
+    return { success: true, user: users[0] };
+  } catch (error) {
+    console.error('createUser exception:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Network error creating user' };
+  }
 }
 
 // Update an existing user

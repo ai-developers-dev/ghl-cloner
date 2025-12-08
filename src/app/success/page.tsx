@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -15,6 +15,8 @@ interface SuccessData {
   message?: string;
 }
 
+const MAX_RETRIES = 10; // Maximum retry attempts (30 seconds total)
+
 function SuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
@@ -22,6 +24,8 @@ function SuccessContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const retryCountRef = useRef(0);
 
   useEffect(() => {
     if (!sessionId) {
@@ -41,9 +45,18 @@ function SuccessContent() {
 
         setData(result);
 
-        // If pending, retry after a few seconds
+        // If pending and haven't exceeded max retries, retry after a few seconds
         if (result.status === 'pending') {
-          setTimeout(() => fetchData(), 3000);
+          if (retryCountRef.current < MAX_RETRIES) {
+            retryCountRef.current += 1;
+            setRetryCount(retryCountRef.current);
+            setTimeout(() => fetchData(), 3000);
+          } else {
+            // Max retries reached - show helpful message instead of hanging
+            setError(
+              'Processing is taking longer than expected. Your license key will be emailed to you shortly. Please check your inbox.'
+            );
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -78,9 +91,16 @@ function SuccessContent() {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
         <div className="text-center max-w-md">
-          <div className="text-6xl mb-4">❌</div>
-          <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
+          <div className="text-6xl mb-4">{error.includes('longer than expected') ? '⏳' : '❌'}</div>
+          <h1 className="text-2xl font-bold mb-4">
+            {error.includes('longer than expected') ? 'Almost There!' : 'Something went wrong'}
+          </h1>
           <p className="text-slate-400 mb-8">{error}</p>
+          {error.includes('longer than expected') && (
+            <p className="text-slate-500 text-sm mb-6">
+              We&apos;ve received your payment and are processing your license. You&apos;ll receive an email with your license key within a few minutes.
+            </p>
+          )}
           <Link
             href="/"
             className="inline-block px-6 py-3 bg-emerald-500 rounded-lg font-semibold"
@@ -99,7 +119,12 @@ function SuccessContent() {
           <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <h1 className="text-2xl font-bold mb-4">Processing Your Purchase</h1>
           <p className="text-slate-400 mb-4">{data.message}</p>
-          <p className="text-sm text-slate-500">This usually takes just a few seconds...</p>
+          <p className="text-sm text-slate-500">
+            Checking... (Attempt {retryCount} of {MAX_RETRIES})
+          </p>
+          <p className="text-xs text-slate-600 mt-2">
+            If this takes too long, we&apos;ll email your license key.
+          </p>
         </div>
       </div>
     );
