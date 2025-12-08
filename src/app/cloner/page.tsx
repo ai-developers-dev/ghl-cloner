@@ -58,10 +58,13 @@ export default function ClonerPage() {
   ];
 
   const faqs = [
-    { q: 'How does it work?', a: "It uses GoHighLevel's internal cloning API. When you paste, it clones the source page into your funnel." },
-    { q: 'Is this safe?', a: "Yes! We use GHL's official internal API - the same one their own features use." },
-    { q: 'Do credits expire?', a: 'No! Your credits never expire. Use them whenever you want.' },
-    { q: 'What if paste fails?', a: "You won't be charged. Credits only deducted on successful clones." },
+    { q: 'What can Super Cloner do?', a: 'Super Cloner can clone any HighLevel Funnel or Website page EXACTLY as is, including any custom CSS and tracking code. After that is done, you are responsible for making edits and changes to make it uniquely yours. Clone responsibly. Each credit is one page.' },
+    { q: 'What does 1 credit mean?', a: 'Each page cloned consumes 1 credit. A page is defined as a unique page in the funnel or website. If your funnel has 5 pages, this would require 5 credits.' },
+    { q: "Is it wrong to copy someone else's funnel or website?", a: "Simply copying and publishing someone else's funnel or website exactly as-is is not acceptable nor ethical—you wouldn't want someone to do that to you. However, it's natural to look online for inspiration. Many people use existing designs as a starting point, drawing ideas from layouts, color schemes, or design elements they admire. Super Cloner helps streamline this process. Instead of hiring/managing VAs or developers to build a funnel from scratch, you can now simply clone one you already like and modify it to fit your needs. It will be far more cost effective and save you time. However, always customize the content and images to ensure the final result is uniquely yours." },
+    { q: 'How long does it take to clone a funnel or website?', a: 'The process takes less than 30 seconds.' },
+    { q: 'Do my credits expire?', a: 'No! Your credits never expire. Use them whenever you want.' },
+    { q: 'How do I use it?', a: "Simply open up 2 tabs. The first tab will be the funnel/website you are looking to clone and the other tab will be with your blank funnel builder already open. Tab 1: Go to tab 1 with the public funnel page and Click Copy. Tab 2: Go to tab 2 the Funnel Builder and Click Paste. That's it! Clone responsibly!" },
+    { q: 'What if paste fails?', a: "You won't be charged. Credits are only deducted on successful clones." },
   ];
 
   const handleGetStarted = async (tier: PricingTier) => {
@@ -278,6 +281,16 @@ export default function ClonerPage() {
               🔐 Admin
             </a>
           </div>
+
+          {/* Disclaimer */}
+          <div className="max-w-xl text-center mt-4 pt-4 border-t border-slate-800">
+            <p className="text-slate-500 text-xs leading-relaxed">
+              Cloning funnels or websites without permission may infringe on intellectual property and copyrights.
+              Use these resources for inspiration, not duplication. Copying someone else&apos;s page or content without
+              consent isn&apos;t ethical. Model their structure, don&apos;t steal their substance.
+            </p>
+          </div>
+
           <div className="text-slate-500 text-sm">© 2024 HLExtras. All rights reserved.</div>
         </div>
       </footer>
