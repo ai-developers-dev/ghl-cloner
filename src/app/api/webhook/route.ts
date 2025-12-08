@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe, getTierByPriceId } from '@/lib/stripe';
 import { getUserByEmail, createUser, addCredits } from '@/lib/supabase';
-import { sendLicenseEmail } from '@/lib/email';
+import { sendLicenseEmail, sendAdminNotificationEmail } from '@/lib/email';
 import Stripe from 'stripe';
 
 export async function POST(request: NextRequest) {
@@ -139,7 +139,7 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
     }
   }
 
-  // Send confirmation email
+  // Send confirmation email to customer
   if (user) {
     await sendLicenseEmail({
       email: user.email,
@@ -147,6 +147,16 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
       licenseKey: user.license_key,
       credits: user.credits,
       tierName: tierInfo?.name || tierName,
+    });
+
+    // Send admin notification email
+    const amount = session.amount_total || 0;
+    await sendAdminNotificationEmail({
+      customerEmail: user.email,
+      customerName: user.name,
+      tierName: tierInfo?.name || tierName,
+      credits: credits,
+      amount: amount,
     });
 
     console.log(`Payment processed for ${email}: ${credits} credits ${isNewUser ? '(new user)' : '(existing user)'}`);

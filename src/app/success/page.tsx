@@ -175,21 +175,19 @@ function SuccessContent() {
           </div>
         </div>
 
-        {/* Download Button */}
+        {/* Download Buttons */}
         <div className="text-center mb-8">
-          <a
-            href={data?.chromeStoreUrl || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/download"
             className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl font-semibold text-lg shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-shadow"
           >
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0C8.21 0 4.831 1.757 2.632 4.501l3.953 6.848A5.454 5.454 0 0 1 12 6.545h10.691A12 12 0 0 0 12 0zM1.931 5.47A11.943 11.943 0 0 0 0 12c0 6.012 4.42 10.991 10.189 11.864l3.953-6.847a5.45 5.45 0 0 1-6.865-2.29zm13.342 2.166a5.446 5.446 0 0 1 1.45 7.09l.002.001h-.002l-3.952 6.848a12.014 12.014 0 0 0 9.298-9.298H15.273zM12 8.182a3.818 3.818 0 1 0 0 7.636 3.818 3.818 0 0 0 0-7.636z" />
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Download Chrome Extension
-          </a>
+            Download & Install Extension
+          </Link>
           <p className="text-slate-500 text-sm mt-3">
-            Click to open Chrome Web Store
+            Get the extension and follow the installation guide
           </p>
         </div>
 
