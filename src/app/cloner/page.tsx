@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   EmbeddedCheckoutProvider,
   EmbeddedCheckout
 } from '@stripe/react-stripe-js';
+import Footer from '@/components/Footer';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -264,36 +265,7 @@ export default function ClonerPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 py-8 px-4">
-        <div className="max-w-6xl mx-auto flex flex-col items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-bold text-sm">HE</div>
-            <span className="font-bold">HLExtras</span>
-          </div>
-          <div className="flex gap-6 items-center">
-            <a href="#" className="text-slate-500 text-sm hover:text-slate-300">Privacy</a>
-            <a href="#" className="text-slate-500 text-sm hover:text-slate-300">Terms</a>
-            <a href="#" className="text-slate-500 text-sm hover:text-slate-300">Contact</a>
-            <a
-              href="/admin"
-              className="flex items-center gap-1.5 text-slate-500 text-sm px-3 py-1.5 bg-slate-800 rounded-md border border-slate-700 hover:text-slate-300"
-            >
-              🔐 Admin
-            </a>
-          </div>
-
-          {/* Disclaimer */}
-          <div className="max-w-xl text-center mt-4 pt-4 border-t border-slate-800">
-            <p className="text-slate-500 text-xs leading-relaxed">
-              Cloning funnels or websites without permission may infringe on intellectual property and copyrights.
-              Use these resources for inspiration, not duplication. Copying someone else&apos;s page or content without
-              consent isn&apos;t ethical. Model their structure, don&apos;t steal their substance.
-            </p>
-          </div>
-
-          <div className="text-slate-500 text-sm">© 2024 HLExtras. All rights reserved.</div>
-        </div>
-      </footer>
+      <Footer showDisclaimer={true} />
 
       {/* Stripe Checkout Modal with Package Selector */}
       {showCheckoutModal && (
