@@ -206,6 +206,12 @@ export default function Footer({ showDisclaimer = false }: FooterProps) {
             >
               Become an Affiliate
             </button>
+            <a
+              href="/login"
+              className="text-slate-500 text-sm hover:text-slate-300"
+            >
+              Login
+            </a>
           </div>
 
           {showDisclaimer && (
