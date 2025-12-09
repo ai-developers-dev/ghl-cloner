@@ -10,8 +10,9 @@ ghl-cloner-complete/
 │   ├── app/
 │   │   ├── page.tsx              # Landing page with affiliate signup modal
 │   │   ├── admin/page.tsx        # Admin dashboard
-│   │   ├── affiliate/page.tsx    # Affiliate login/dashboard
+│   │   ├── affiliate/page.tsx    # Affiliate dashboard
 │   │   ├── affiliate/setup/      # Affiliate password setup
+│   │   ├── login/page.tsx        # Unified login (admin + affiliate)
 │   │   ├── cloner/page.tsx       # Product page
 │   │   ├── download/page.tsx     # Extension download page
 │   │   └── api/
@@ -118,6 +119,25 @@ ghl-cloner-complete/
 | Agency | 50 | $375 | $7.50 |
 | Enterprise | 100 | $500 | $5.00 |
 
+## Authentication
+
+### Unified Login (`/login`)
+Single login page for both admins and affiliates:
+- Attempts admin authentication first
+- Falls back to affiliate authentication
+- Redirects to appropriate dashboard based on user type
+
+### Login Flow
+1. User clicks "Login" link in footer
+2. Enters email and password
+3. System checks admin credentials first, then affiliate
+4. Redirects to `/admin` (admins) or `/affiliate` (affiliates)
+
+### Footer Links
+- **Privacy** / **Terms** / **Contact** - Standard links
+- **Become an Affiliate** - Opens signup modal
+- **Login** - Unified login for admin/affiliates
+
 ## Affiliate System
 
 ### Public Signup Flow
@@ -129,7 +149,7 @@ ghl-cloner-complete/
    - Referral code and URL
    - Commission rate (20% default)
 5. User clicks link → sets password at `/affiliate/setup`
-6. User logs in at `/affiliate` to view dashboard
+6. User logs in via `/login` to view dashboard
 
 ### Referral Tracking
 - Referral URLs: `hlextras.com/cloner?ref={code}`
@@ -223,5 +243,7 @@ npx tsc --noEmit
 - `src/lib/supabase.ts` - All database functions
 - `src/lib/email.ts` - Email templates
 - `src/app/admin/page.tsx` - Admin dashboard
-- `src/app/page.tsx` - Landing page + affiliate modal
+- `src/app/login/page.tsx` - Unified login page
+- `src/app/page.tsx` - Landing page
+- `src/components/Footer.tsx` - Shared footer with affiliate signup modal
 - `GHL Cloner/content-scripts/inject.js` - Extension clone logic
