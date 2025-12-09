@@ -6,28 +6,32 @@ A SaaS Chrome Extension that allows users to clone GoHighLevel funnel pages. Use
 
 ```
 ghl-cloner-complete/
-├── web/                          # Next.js 16 web app
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── page.tsx          # Landing page
-│   │   │   ├── admin/page.tsx    # Admin dashboard
-│   │   │   └── layout.tsx        # Root layout
-│   │   └── lib/
-│   │       └── supabase.ts       # Supabase API functions
-│   └── package.json
-├── chrome-extension/             # Chrome Extension (Manifest V3)
+├── src/
+│   ├── app/
+│   │   ├── page.tsx              # Landing page with affiliate signup modal
+│   │   ├── admin/page.tsx        # Admin dashboard
+│   │   ├── affiliate/page.tsx    # Affiliate login/dashboard
+│   │   ├── affiliate/setup/      # Affiliate password setup
+│   │   ├── cloner/page.tsx       # Product page
+│   │   ├── download/page.tsx     # Extension download page
+│   │   └── api/
+│   │       ├── checkout/         # Stripe checkout
+│   │       ├── webhook/          # Stripe webhooks
+│   │       ├── affiliate-signup/ # Public affiliate registration
+│   │       └── ...
+│   ├── components/
+│   │   ├── Header.tsx
+│   │   └── ToolCard.tsx
+│   └── lib/
+│       ├── supabase.ts           # Database & affiliate functions
+│       ├── email.ts              # Resend email functions
+│       └── stripe.ts             # Stripe configuration
+├── GHL Cloner/                   # Chrome Extension (Manifest V3)
 │   ├── manifest.json
 │   ├── popup/                    # License UI & main interface
-│   │   ├── popup.html
-│   │   ├── popup.js
-│   │   └── popup.css
-│   ├── background/
-│   │   └── service-worker.js     # Badge updates
-│   ├── content-scripts/
-│   │   ├── detector.js           # Message router
-│   │   └── inject.js             # GHL API integration
-│   └── utils/
-│       └── helpers.js
+│   ├── background/               # Service worker
+│   └── content-scripts/          # GHL API integration
+├── supabase/                     # Edge functions
 └── README.md
 ```
 
@@ -45,6 +49,7 @@ ghl-cloner-complete/
 | credits | Integer | Current credit balance |
 | status | Text | 'active' or 'inactive' |
 | is_admin | Boolean | Admin flag for dashboard access |
+| affiliate_id | UUID | Foreign key to affiliates (for tracking referrals) |
 | created_at | Timestamp | Account creation date |
 | updated_at | Timestamp | Last update |
 
@@ -60,6 +65,50 @@ ghl-cloner-complete/
 | metadata | JSONB | Extra data (funnel_id, step_id, etc.) |
 | created_at | Timestamp | Transaction date |
 
+### affiliates table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| name | Text | Affiliate's name |
+| email | Text | Unique email |
+| code | Text | Unique referral code (e.g., "jsmith") |
+| commission_rate | Decimal | Commission rate (0.20 = 20%) |
+| status | Text | 'active' or 'inactive' |
+| total_earned | Integer | Total commissions earned (cents) |
+| total_paid | Integer | Total commissions paid out (cents) |
+| password | Text | Hashed password for dashboard login |
+| setup_token | Text | One-time setup token for new affiliates |
+| setup_token_expires | Timestamp | Token expiration (7 days) |
+| created_at | Timestamp | Account creation date |
+| updated_at | Timestamp | Last update |
+
+### affiliate_commissions table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| affiliate_id | UUID | Foreign key to affiliates |
+| user_id | UUID | Foreign key to users (the customer) |
+| purchase_amount | Integer | Sale amount (cents) |
+| commission_amount | Integer | Commission amount (cents) |
+| stripe_session_id | Text | Stripe checkout session ID |
+| status | Text | 'pending', 'approved', or 'paid' |
+| paid_at | Timestamp | When commission was paid |
+| created_at | Timestamp | Commission date |
+
+### sales table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| user_id | UUID | Foreign key to users |
+| stripe_session_id | Text | Stripe checkout session ID |
+| stripe_payment_intent | Text | Stripe payment intent ID |
+| amount | Integer | Sale amount (cents) |
+| credits | Integer | Credits purchased |
+| tier | Text | Package name |
+| affiliate_id | UUID | Referring affiliate (if any) |
+| affiliate_commission | Integer | Commission amount (cents) |
+| created_at | Timestamp | Sale date |
+
 ## Pricing Tiers
 | Package | Credits | Price | Per Credit |
 |---------|---------|-------|------------|
@@ -69,23 +118,55 @@ ghl-cloner-complete/
 | Agency | 50 | $375 | $7.50 |
 | Enterprise | 100 | $500 | $5.00 |
 
+## Affiliate System
+
+### Public Signup Flow
+1. User clicks "Become an Affiliate" in footer
+2. Modal form collects: name, email, phone
+3. API creates affiliate with setup token (expires in 7 days)
+4. Welcome email sent with:
+   - Setup link to create password
+   - Referral code and URL
+   - Commission rate (20% default)
+5. User clicks link → sets password at `/affiliate/setup`
+6. User logs in at `/affiliate` to view dashboard
+
+### Referral Tracking
+- Referral URLs: `hlextras.com/cloner?ref={code}`
+- Cookie stored for 30 days
+- Commission logged on successful purchase
+- Admin can approve/mark commissions as paid
+
+### API Endpoints
+- `POST /api/affiliate-signup` - Public registration
+  - Body: `{ name, email, phone }`
+  - Returns: `{ success, message, affiliateCode }`
+
+### Key Files
+- `src/app/page.tsx` - Contains AffiliateSignupModal component
+- `src/app/api/affiliate-signup/route.ts` - Registration endpoint
+- `src/app/affiliate/page.tsx` - Affiliate dashboard
+- `src/app/affiliate/setup/page.tsx` - Password setup
+- `src/lib/supabase.ts` - Affiliate database functions
+- `src/lib/email.ts` - `sendAffiliateWelcomeEmail()`
+
 ## Admin Dashboard
-- **URL**: http://localhost:3000/admin
+- **URL**: https://hlextras.com/admin
 - **Admin User**: doug@aideveloper.dev (is_admin=true)
 - **Password**: ghlcloner2024
 
 ### Features
-- Create new users (auto-generates license key)
-- Edit user name/email/status
+- Create/edit/delete users
 - Add/remove credits (logged as transactions)
-- Delete users
 - View all transactions
+- Manage affiliates
+- View commissions and mark as paid
+- Sales reports (daily/weekly/monthly)
 
 ## Running the Project
 
 ### Web App
 ```bash
-cd web
 npm install
 npm run dev
 # Open http://localhost:3000
@@ -95,84 +176,52 @@ npm run dev
 1. Go to chrome://extensions
 2. Enable "Developer mode"
 3. Click "Load unpacked"
-4. Select the `chrome-extension` folder
+4. Select the `GHL Cloner` folder
 
 ## How Credits Flow
-1. Admin creates user in dashboard -> auto-generates license key (GHLC-XXXX-XXXX-XXXX)
-2. Admin adds credits to user (logged as transaction)
+1. User purchases credits via Stripe checkout
+2. Webhook provisions credits automatically
 3. User enters license key in Chrome extension
 4. User copies a GHL page, pastes into their builder
-5. On successful paste -> 1 credit deducted -> transaction logged
+5. On successful paste → 1 credit deducted → transaction logged
 
----
+## Environment Variables
 
-## CURRENT STATUS
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://yayykhctnywepnvalivp.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 
-### Completed
-- [x] Next.js 16 web app setup
-- [x] Landing page with pricing
-- [x] Admin dashboard with full CRUD
-- [x] Email + password login for admin
-- [x] User creation with auto-generated license keys
-- [x] Credit adjustment with transaction logging
-- [x] Chrome extension with license validation
-- [x] Copy/paste functionality
-- [x] Credit deduction on successful clone
-- [x] Stripe MCP installed and configured
+# Stripe
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
 
-### In Progress
-- [ ] **Stripe Integration** - Create products/prices for credit packages
-- [ ] Connect "Get Started" buttons to Stripe checkout
-- [ ] Webhook to auto-provision credits after payment
+# Email (Resend)
+RESEND_API_KEY=re_...
+ADMIN_EMAIL=doug@aideveloper.dev
 
-### TODO
-- [ ] Enable Supabase Row-Level Security (RLS)
-- [ ] Move API calls to server-side (security)
-- [ ] Email verification for new users
-
----
-
-## NEXT SESSION: Stripe Setup
-
-**IMPORTANT**: Restart Claude Code to activate Stripe MCP!
-
-Stripe MCP has been installed and configured. On next session:
-
-1. **Restart Claude Code** to activate Stripe MCP
-2. Create Stripe products for each pricing tier:
-   - Starter: 2 credits @ $25
-   - Basic: 10 credits @ $125
-   - Professional: 20 credits @ $200
-   - Agency: 50 credits @ $375
-   - Enterprise: 100 credits @ $500
-3. Create checkout session API route
-4. Create webhook endpoint to add credits after payment
-5. Connect landing page buttons to checkout
-
-### Stripe Configuration
-- **Mode**: Live
-- **API Key**: Configured in MCP (sk_live_51JrPd...)
-
-### Files to Create for Stripe
-- `web/src/app/api/checkout/route.ts` - Create checkout session
-- `web/src/app/api/webhook/route.ts` - Handle Stripe webhooks
-- Update `web/src/app/page.tsx` - Connect buttons to checkout
-
----
+# Admin
+ADMIN_PASSWORD=ghlcloner2024
+```
 
 ## Quick Reference
 
 ### Key Commands
 ```bash
-# Start web app
-cd web && npm run dev
+# Start dev server
+npm run dev
 
-# Check Stripe MCP status
-claude mcp list
+# Build for production
+npm run build
+
+# Type check
+npx tsc --noEmit
 ```
 
 ### Important Files
-- `web/src/lib/supabase.ts` - All database functions
-- `web/src/app/admin/page.tsx` - Admin dashboard
-- `web/src/app/page.tsx` - Landing page
-- `chrome-extension/popup/popup.js` - Extension logic
+- `src/lib/supabase.ts` - All database functions
+- `src/lib/email.ts` - Email templates
+- `src/app/admin/page.tsx` - Admin dashboard
+- `src/app/page.tsx` - Landing page + affiliate modal
+- `GHL Cloner/content-scripts/inject.js` - Extension clone logic
