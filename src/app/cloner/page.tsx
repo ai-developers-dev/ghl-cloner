@@ -182,8 +182,62 @@ export default function ClonerPage() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* How It Works Section */}
       <section className="py-20 px-4 bg-slate-900/50">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-4">How It Works</h2>
+          <p className="text-slate-400 text-center mb-12">A simple Chrome extension that copies and pastes GHL pages in seconds</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Step 1 */}
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 flex items-center justify-center">
+                <span className="text-2xl font-bold text-emerald-400">1</span>
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Install Extension</h3>
+              <p className="text-slate-400 text-sm">Download and install the HL Cloner Chrome extension. Enter your license key to activate.</p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 flex items-center justify-center">
+                <span className="text-2xl font-bold text-emerald-400">2</span>
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Copy Any Page</h3>
+              <p className="text-slate-400 text-sm">Navigate to any public GHL funnel or website page. Click the extension and hit Copy.</p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 flex items-center justify-center">
+                <span className="text-2xl font-bold text-emerald-400">3</span>
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Paste to Your Account</h3>
+              <p className="text-slate-400 text-sm">Open your GHL page builder, create a new page, click Paste, and the entire page is cloned instantly.</p>
+            </div>
+          </div>
+
+          {/* Chrome Extension Badge */}
+          <div className="mt-12 flex justify-center">
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-slate-800 border border-slate-700 rounded-xl">
+              <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="#4285F4"/>
+                <circle cx="12" cy="12" r="4" fill="white"/>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="none" stroke="#EA4335" strokeWidth="2" strokeDasharray="15.7 47.1" strokeDashoffset="0"/>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="none" stroke="#FBBC05" strokeWidth="2" strokeDasharray="15.7 47.1" strokeDashoffset="-15.7"/>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="none" stroke="#34A853" strokeWidth="2" strokeDasharray="15.7 47.1" strokeDashoffset="-31.4"/>
+              </svg>
+              <div>
+                <div className="font-semibold text-white">Chrome Extension</div>
+                <div className="text-xs text-slate-400">Works on any Chromium browser</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Why Agencies Love It</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -199,7 +253,7 @@ export default function ClonerPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4">
+      <section id="pricing" className="py-20 px-4 bg-slate-900/50">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-4">Simple Pricing</h2>
           <p className="text-slate-400 text-center mb-12">Buy credits, use them whenever. No subscriptions.</p>
@@ -244,7 +298,7 @@ export default function ClonerPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 px-4 bg-slate-900/50">
+      <section className="py-20 px-4">
         <div className="max-w-xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">FAQ</h2>
           <div className="flex flex-col gap-3">

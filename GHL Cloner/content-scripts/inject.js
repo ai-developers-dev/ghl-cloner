@@ -106,6 +106,12 @@
     if (response?.status === 201) {
       return response.data;
     }
+
+    // Enhanced error logging for debugging
+    console.error('[GHL Cloner] Clone API failed - Full response:', response);
+    console.error('[GHL Cloner] Response data:', response?.data);
+    console.error('[GHL Cloner] Response status:', response?.status);
+
     throw new Error(`Clone API failed with status: ${response?.status}`);
   }
 
@@ -390,9 +396,11 @@
 
     if (funnelEl || stepEl || pageEl) {
       console.log('[GHL Cloner] Detected GHL via data attributes');
+      const funnelId = funnelEl?.dataset?.funnelId || funnelEl?.getAttribute('data-funnel-id');
+      const stepId = stepEl?.dataset?.stepId || stepEl?.getAttribute('data-step-id') || pageEl?.dataset?.pageId;
       return {
-        funnelId: funnelEl?.dataset?.funnelId || funnelEl?.getAttribute('data-funnel-id'),
-        stepId: stepEl?.dataset?.stepId || stepEl?.getAttribute('data-step-id') || pageEl?.dataset?.pageId
+        funnelId: funnelId ? String(funnelId) : null,
+        stepId: stepId ? String(stepId) : null
       };
     }
     return null;
@@ -460,8 +468,30 @@
     return null;
   }
 
-  // Method 7: Check Nuxt data script tag
+  // Method 7: Check Nuxt data - PRIORITIZE useNuxtApp() like Super Cloner
   function checkNuxtDataTag() {
+    // First try useNuxtApp() - this is what Super Cloner uses and it works
+    try {
+      if (typeof useNuxtApp === 'function') {
+        const nuxtApp = useNuxtApp();
+        if (nuxtApp?.payload?.data) {
+          console.log('[GHL Cloner] Found Nuxt payload via useNuxtApp');
+          const data = nuxtApp.payload.data;
+
+          // Check for restricted pages (like Super Cloner does)
+          const isRestricted = window.sys_tool === false;
+          if (data.pageData) {
+            data.pageData.restricted = isRestricted;
+          }
+
+          return extractFunnelData(data);
+        }
+      }
+    } catch (e) {
+      console.log('[GHL Cloner] useNuxtApp not available:', e.message);
+    }
+
+    // Fallback: Check __NUXT_DATA__ script tag
     const nuxtDataScript = document.getElementById('__NUXT_DATA__');
     if (nuxtDataScript) {
       try {
@@ -473,19 +503,6 @@
       }
     }
 
-    // Also try useNuxtApp if available
-    try {
-      if (typeof useNuxtApp === 'function') {
-        const nuxtApp = useNuxtApp();
-        if (nuxtApp?.payload?.data) {
-          console.log('[GHL Cloner] Found Nuxt payload via useNuxtApp');
-          return extractFunnelData(nuxtApp.payload.data);
-        }
-      }
-    } catch (e) {
-      // useNuxtApp not available
-    }
-
     return null;
   }
 
@@ -495,12 +512,12 @@
 
     // Direct properties
     if (data.funnelId && data.stepId) {
-      return { pageData: { funnelId: data.funnelId, stepId: data.stepId } };
+      return { pageData: { funnelId: String(data.funnelId), stepId: String(data.stepId) } };
     }
 
     // Nested in page object
     if (data.page?.funnelId) {
-      return { pageData: { funnelId: data.page.funnelId, stepId: data.page.stepId || data.page.id } };
+      return { pageData: { funnelId: String(data.page.funnelId), stepId: String(data.page.stepId || data.page.id) } };
     }
 
     // Search recursively (limited depth)
@@ -518,7 +535,7 @@
 
     // Check if this object has funnelId and stepId
     if (obj.funnelId && obj.stepId) {
-      return { funnelId: obj.funnelId, stepId: obj.stepId };
+      return { funnelId: String(obj.funnelId), stepId: String(obj.stepId) };
     }
 
     // Check array items
@@ -552,16 +569,20 @@
   function checkForPageData() {
     console.log('[GHL Cloner] Checking for page data...');
 
+    // PRIORITY CHECK: window.attribution.locationId (Super Cloner's primary method)
+    const hasLocationId = !!window?.attribution?.locationId;
+    console.log('[GHL Cloner] Has attribution locationId:', hasLocationId);
+
     // First: Check if this is a GHL page by content signatures
     const isGHLByScript = checkScriptSources();
     const isGHLByCDN = checkCDNLinks();
-    const isGHLPage = isGHLByScript || isGHLByCDN;
+    const isGHLPage = isGHLByScript || isGHLByCDN || hasLocationId;
 
-    console.log('[GHL Cloner] GHL detection - Scripts:', isGHLByScript, 'CDN:', isGHLByCDN);
+    console.log('[GHL Cloner] GHL detection - Scripts:', isGHLByScript, 'CDN:', isGHLByCDN, 'Attribution:', hasLocationId);
 
     // Try to extract specific funnel data
 
-    // Method 1: Nuxt data tag
+    // Method 1: Nuxt data tag (prioritizes useNuxtApp like Super Cloner)
     const nuxtData = checkNuxtDataTag();
     if (nuxtData?.pageData?.funnelId) {
       console.log('[GHL Cloner] Found data via Nuxt tag');

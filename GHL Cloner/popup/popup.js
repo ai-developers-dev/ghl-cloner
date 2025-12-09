@@ -1,4 +1,4 @@
-// GHL Page Cloner - Popup Script
+// GHL Cloner - Popup Script
 // Using Supabase Edge Functions
 
 (function() {
@@ -285,7 +285,8 @@
       copyBtn.textContent = '✓ Copied!';
 
       if (pd.funnelId) {
-        copyStatus.textContent = `Copied funnel: ${pd.funnelId.substring(0, 8)}...`;
+        const funnelIdStr = String(pd.funnelId);
+        copyStatus.textContent = `Copied funnel: ${funnelIdStr.substring(0, 8)}...`;
       } else {
         copyStatus.textContent = 'Page copied (partial data)';
       }
@@ -334,11 +335,19 @@
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
+      if (!tab?.id) {
+        throw new Error('No active tab found');
+      }
+
       // Send paste command to content script
       const response = await chrome.tabs.sendMessage(tab.id, {
         from: 'Popup',
         type: 'PASTE_PAGE',
         payload: copiedData
+      }).catch(err => {
+        // Handle case where content script isn't ready
+        console.error('sendMessage failed:', err);
+        throw new Error('Content script not ready. Please refresh the page.');
       });
 
       console.log('Paste response:', response);
@@ -430,13 +439,18 @@
       // If no data found, try to trigger re-detection
       if (!currentTabData?.pageData) {
         console.log('[DEBUG] No page data found, requesting re-detection');
-        try {
-          await chrome.tabs.sendMessage(tab.id, {
-            from: 'Popup',
-            type: 'REDETECT'
-          });
-          // Check again after a short delay
-          setTimeout(async () => {
+        // Use .catch() to handle case where content script isn't injected
+        await chrome.tabs.sendMessage(tab.id, {
+          from: 'Popup',
+          type: 'REDETECT'
+        }).catch(() => {
+          // Content script may not be injected on this page - this is OK
+          console.log('[DEBUG] Content script not available for redetect');
+        });
+
+        // Check again after a short delay
+        setTimeout(async () => {
+          try {
             const refreshed = await chrome.storage.local.get([storageKey, 'lastPageData']);
             if (refreshed[storageKey]) {
               currentTabData = refreshed[storageKey];
@@ -444,10 +458,10 @@
               currentTabData = refreshed.lastPageData;
             }
             updateMainUI();
-          }, 1500);
-        } catch (e) {
-          console.log('[DEBUG] Could not send redetect message:', e.message);
-        }
+          } catch (e) {
+            console.log('[DEBUG] Error refreshing data:', e.message);
+          }
+        }, 1500);
       }
     } catch (e) {
       console.error('Check tab error:', e);
