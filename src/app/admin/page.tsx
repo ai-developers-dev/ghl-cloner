@@ -485,6 +485,11 @@ export default function AdminDashboard() {
     .filter((t) => t.type === 'usage')
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
+  // Filter users: those WITHOUT commission_rate are regular users
+  // Those WITH commission_rate should appear in affiliates tab
+  const regularUsers = users.filter((u) => !u.commission_rate);
+  const userAffiliates = users.filter((u) => u.commission_rate);
+
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -568,7 +573,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <div className="text-slate-500 text-sm mb-1">Total Users</div>
-            <div className="text-3xl font-bold text-emerald-400">{users.length}</div>
+            <div className="text-3xl font-bold text-emerald-400">{regularUsers.length}</div>
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
             <div className="text-slate-500 text-sm mb-1">Total Credits</div>
@@ -672,7 +677,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {regularUsers.map((user) => (
                   <tr key={user.id} className="border-t border-slate-800">
                     <td className="px-4 py-4">
                       <div className="font-medium">{user.name || 'No name'}</div>
@@ -735,7 +740,7 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
-            {users.length === 0 && <div className="py-10 text-center text-slate-500">No users yet</div>}
+            {regularUsers.length === 0 && <div className="py-10 text-center text-slate-500">No users yet</div>}
           </div>
         )}
 
@@ -801,7 +806,7 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
                 <div className="text-slate-500 text-sm mb-1">Total Affiliates</div>
-                <div className="text-3xl font-bold text-emerald-400">{affiliates.length}</div>
+                <div className="text-3xl font-bold text-emerald-400">{affiliates.length + userAffiliates.length}</div>
               </div>
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
                 <div className="text-slate-500 text-sm mb-1">Total Earned</div>
@@ -906,10 +911,96 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
-              {affiliates.length === 0 && (
+              {affiliates.length === 0 && userAffiliates.length === 0 && (
                 <div className="py-10 text-center text-slate-500">No affiliates yet. Click &quot;+ New Affiliate&quot; to create one.</div>
               )}
             </div>
+
+            {/* User-Based Affiliates (users with commission_rate) */}
+            {userAffiliates.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold mb-4 text-slate-300">User Affiliates (with credits)</h3>
+                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-slate-800">
+                        <th className="px-4 py-4 text-left font-semibold text-slate-400">User</th>
+                        <th className="px-4 py-4 text-left font-semibold text-slate-400">License Key</th>
+                        <th className="px-4 py-4 text-center font-semibold text-slate-400">Credits</th>
+                        <th className="px-4 py-4 text-center font-semibold text-slate-400">Commission</th>
+                        <th className="px-4 py-4 text-center font-semibold text-slate-400">Status</th>
+                        <th className="px-4 py-4 text-center font-semibold text-slate-400">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {userAffiliates.map((user) => (
+                        <tr key={user.id} className="border-t border-slate-800">
+                          <td className="px-4 py-4">
+                            <div className="font-medium">{user.name || 'No name'}</div>
+                            <div className="text-slate-500 text-sm">{user.email}</div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <code className="bg-slate-800 px-2 py-1 rounded text-sm text-emerald-400">
+                              {user.license_key}
+                            </code>
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <span
+                              className={`px-3 py-1 rounded-full font-semibold ${
+                                user.credits > 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                              }`}
+                            >
+                              {user.credits}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 font-semibold">
+                              {Math.round((user.commission_rate || 0) * 100)}%
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
+                                user.status === 'active'
+                                  ? 'bg-emerald-500/20 text-emerald-400'
+                                  : 'bg-red-500/20 text-red-400'
+                              }`}
+                            >
+                              {user.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex gap-2 justify-center">
+                              <button
+                                onClick={() => openEditModal(user)}
+                                className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 text-sm"
+                                title="Edit"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => openCreditsModal(user)}
+                                className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 text-sm"
+                                title="Add Credits"
+                              >
+                                💳
+                              </button>
+                              <button
+                                onClick={() => openDeleteModal(user)}
+                                className="p-2 bg-slate-800 rounded-lg hover:bg-red-900 text-sm"
+                                title="Delete"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </>
         )}
 
