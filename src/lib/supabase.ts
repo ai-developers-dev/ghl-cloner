@@ -12,6 +12,7 @@ export interface User {
   status: 'active' | 'inactive';
   is_admin?: boolean;
   affiliate_id?: string;
+  commission_rate?: number; // Commission rate for this user (0.20 = 20%)
   created_at: string;
   updated_at: string;
 }
@@ -59,6 +60,7 @@ export interface CreateUserData {
   email: string;
   credits?: number;
   status?: 'active' | 'inactive';
+  commission_rate?: number; // Commission rate (0.20 = 20%)
 }
 
 // Generate a unique license key
@@ -254,7 +256,8 @@ export async function createUser(data: CreateUserData): Promise<{ success: boole
         email: data.email,
         name: data.name,
         credits: data.credits || 0,
-        status: data.status || 'active'
+        status: data.status || 'active',
+        commission_rate: data.commission_rate || null
       })
     });
 

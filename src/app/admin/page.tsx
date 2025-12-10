@@ -80,6 +80,7 @@ export default function AdminDashboard() {
   const [formEmail, setFormEmail] = useState('');
   const [formCredits, setFormCredits] = useState(0);
   const [formStatus, setFormStatus] = useState<'active' | 'inactive'>('active');
+  const [formCommissionRate, setFormCommissionRate] = useState<number | null>(null);
   const [creditAmount, setCreditAmount] = useState(0);
   const [creditDescription, setCreditDescription] = useState('');
   const [formLoading, setFormLoading] = useState(false);
@@ -136,6 +137,7 @@ export default function AdminDashboard() {
     setFormEmail('');
     setFormCredits(0);
     setFormStatus('active');
+    setFormCommissionRate(null);
     setShowUserModal(true);
   };
 
@@ -145,6 +147,7 @@ export default function AdminDashboard() {
     setFormName(user.name || '');
     setFormEmail(user.email);
     setFormStatus(user.status);
+    setFormCommissionRate(user.commission_rate ? user.commission_rate * 100 : null);
     setShowUserModal(true);
   };
 
@@ -179,6 +182,7 @@ export default function AdminDashboard() {
           name: formName,
           email: formEmail,
           status: formStatus,
+          commission_rate: formCommissionRate ? formCommissionRate / 100 : undefined,
         });
         if (!result.success) {
           setError(result.error || 'Failed to update user');
@@ -190,6 +194,7 @@ export default function AdminDashboard() {
           email: formEmail,
           credits: formCredits,
           status: formStatus,
+          commission_rate: formCommissionRate ? formCommissionRate / 100 : undefined,
         });
         if (!result.success) {
           setError(result.error || 'Failed to create user');
@@ -1180,6 +1185,21 @@ export default function AdminDashboard() {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 text-sm mb-1">Commission Rate (%) <span className="text-slate-500">- optional</span></label>
+                <input
+                  type="number"
+                  value={formCommissionRate ?? ''}
+                  onChange={(e) => setFormCommissionRate(e.target.value ? parseFloat(e.target.value) : null)}
+                  placeholder="e.g., 20 for 20%"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white"
+                />
+                <p className="text-slate-500 text-xs mt-1">Leave empty if user is not an affiliate</p>
               </div>
             </div>
 
