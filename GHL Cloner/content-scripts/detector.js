@@ -48,8 +48,9 @@
     }
 
     // Messages from Popup - forward to inject script
+    // IMPORTANT: Change 'from' to 'GHLClonerContent' so inject.js recognizes it
     if (from === 'Popup') {
-      window.postMessage({ ...message, callbackId }, '*');
+      window.postMessage({ ...message, from: 'GHLClonerContent', callbackId }, '*');
       return true;
     }
   });

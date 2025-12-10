@@ -4,7 +4,7 @@ import {
   getAffiliateByEmail,
   generateAffiliateCode
 } from '@/lib/supabase';
-import { sendAffiliateWelcomeEmail } from '@/lib/email';
+import { sendAffiliateWelcomeEmail, sendNewAffiliateAdminNotification } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -64,6 +64,20 @@ export async function POST(request: NextRequest) {
     if (!emailResult.success) {
       console.error('Failed to send welcome email:', emailResult.error);
       // Don't fail the signup if email fails - they can contact support
+    }
+
+    // Send admin notification
+    const adminNotifyResult = await sendNewAffiliateAdminNotification({
+      affiliateName: result.affiliate.name,
+      affiliateEmail: result.affiliate.email,
+      affiliateCode: result.affiliate.code,
+      commissionRate: result.affiliate.commission_rate,
+      source: 'Public Signup',
+    });
+
+    if (!adminNotifyResult.success) {
+      console.error('Failed to send admin notification:', adminNotifyResult.error);
+      // Don't fail the signup if admin notification fails
     }
 
     // Log the phone number for future reference (could be stored in a notes field if needed)

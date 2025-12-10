@@ -28,7 +28,7 @@ import {
   getAllSalesReports,
   fetchSales,
 } from '@/lib/supabase';
-import { sendAffiliateWelcomeEmail } from '@/lib/email';
+import { sendAffiliateWelcomeEmail, sendNewAffiliateAdminNotification } from '@/lib/email';
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -348,6 +348,20 @@ export default function AdminDashboard() {
 
         if (!emailResult.success) {
           console.error('Failed to send welcome email:', emailResult.error);
+          // Don't fail the whole operation, just log the error
+        }
+
+        // Send admin notification
+        const adminNotifyResult = await sendNewAffiliateAdminNotification({
+          affiliateName: result.affiliate.name,
+          affiliateEmail: result.affiliate.email,
+          affiliateCode: result.affiliate.code,
+          commissionRate: result.affiliate.commission_rate,
+          source: 'Admin Created',
+        });
+
+        if (!adminNotifyResult.success) {
+          console.error('Failed to send admin notification:', adminNotifyResult.error);
           // Don't fail the whole operation, just log the error
         }
       }

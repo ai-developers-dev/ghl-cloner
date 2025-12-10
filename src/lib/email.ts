@@ -282,6 +282,102 @@ export async function sendAdminNotificationEmail({
   }
 }
 
+// Admin notification for new affiliate signups
+interface NewAffiliateAdminNotificationParams {
+  affiliateName: string;
+  affiliateEmail: string;
+  affiliateCode: string;
+  commissionRate: number;
+  source: 'Public Signup' | 'Admin Created';
+}
+
+export async function sendNewAffiliateAdminNotification({
+  affiliateName,
+  affiliateEmail,
+  affiliateCode,
+  commissionRate,
+  source,
+}: NewAffiliateAdminNotificationParams): Promise<{ success: boolean; error?: string }> {
+  const commissionPercent = Math.round(commissionRate * 100);
+  const timestamp = new Date().toLocaleString('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+
+  try {
+    const { error } = await resend.emails.send({
+      from: 'HLExtras <noreply@hlextras.com>',
+      to: ADMIN_EMAIL,
+      subject: `🤝 New Affiliate: ${affiliateName} (${source})`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0f172a;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 40px;">
+              <div style="display: inline-block; width: 60px; height: 60px; border-radius: 12px; background: linear-gradient(135deg, #34d399, #06b6d4); line-height: 60px; font-size: 24px; font-weight: bold; color: #0f172a;">HE</div>
+              <h1 style="color: #ffffff; font-size: 24px; margin: 16px 0 0 0;">New Affiliate Joined!</h1>
+            </div>
+
+            <!-- Affiliate Details -->
+            <div style="background-color: #1e293b; border-radius: 16px; padding: 32px; border: 1px solid #334155;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="color: #94a3b8; padding: 12px 0; border-bottom: 1px solid #334155;">Name</td>
+                  <td style="color: #ffffff; padding: 12px 0; border-bottom: 1px solid #334155; text-align: right; font-weight: bold;">${affiliateName}</td>
+                </tr>
+                <tr>
+                  <td style="color: #94a3b8; padding: 12px 0; border-bottom: 1px solid #334155;">Email</td>
+                  <td style="color: #34d399; padding: 12px 0; border-bottom: 1px solid #334155; text-align: right;">${affiliateEmail}</td>
+                </tr>
+                <tr>
+                  <td style="color: #94a3b8; padding: 12px 0; border-bottom: 1px solid #334155;">Affiliate Code</td>
+                  <td style="color: #ffffff; padding: 12px 0; border-bottom: 1px solid #334155; text-align: right; font-family: monospace;">${affiliateCode}</td>
+                </tr>
+                <tr>
+                  <td style="color: #94a3b8; padding: 12px 0; border-bottom: 1px solid #334155;">Commission Rate</td>
+                  <td style="color: #34d399; padding: 12px 0; border-bottom: 1px solid #334155; text-align: right; font-weight: bold;">${commissionPercent}%</td>
+                </tr>
+                <tr>
+                  <td style="color: #94a3b8; padding: 12px 0; border-bottom: 1px solid #334155;">Source</td>
+                  <td style="color: #ffffff; padding: 12px 0; border-bottom: 1px solid #334155; text-align: right;">${source}</td>
+                </tr>
+                <tr>
+                  <td style="color: #94a3b8; padding: 12px 0;">Time</td>
+                  <td style="color: #ffffff; padding: 12px 0; text-align: right;">${timestamp}</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- CTA -->
+            <div style="text-align: center; margin-top: 32px;">
+              <a href="https://hlextras.com/admin" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #34d399, #06b6d4); color: #0f172a; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                View in Admin Dashboard →
+              </a>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error('New affiliate admin notification error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('New affiliate admin notification error:', error);
+    return { success: false, error: 'Failed to send admin notification' };
+  }
+}
+
 // Affiliate welcome email with setup link
 interface AffiliateWelcomeEmailParams {
   email: string;
@@ -371,6 +467,34 @@ export async function sendAffiliateWelcomeEmail({
                   <li style="margin-bottom: 8px;">Track your referrals and earnings in your affiliate dashboard</li>
                   <li style="margin-bottom: 0;">Get paid monthly for approved commissions</li>
                 </ol>
+              </div>
+
+              <!-- About the Product -->
+              <div style="margin-top: 32px; background-color: #0f172a; border-radius: 12px; padding: 20px; border: 1px solid #334155;">
+                <p style="color: #ffffff; font-weight: bold; margin: 0 0 12px 0;">📋 About HL Cloner (The Product You're Promoting):</p>
+                <p style="color: #94a3b8; margin: 0 0 12px 0;">
+                  HL Cloner is a Chrome extension that lets users clone any GoHighLevel funnel page in seconds. Instead of rebuilding pages from scratch (2-4 hours), users can copy and paste an entire page design in 30 seconds.
+                </p>
+                <p style="color: #94a3b8; margin: 0 0 8px 0;"><strong style="color: #34d399;">How it works for customers:</strong></p>
+                <ol style="color: #94a3b8; margin: 0 0 16px 0; padding-left: 20px;">
+                  <li style="margin-bottom: 4px;">Install the Chrome extension</li>
+                  <li style="margin-bottom: 4px;">Visit any GHL funnel page and click "Copy"</li>
+                  <li style="margin-bottom: 4px;">Go to their own GHL builder and click "Paste"</li>
+                  <li style="margin-bottom: 0;">Done! The page is cloned instantly</li>
+                </ol>
+                <p style="color: #94a3b8; margin: 0;">
+                  <strong style="color: #ffffff;">Pricing:</strong> No subscriptions - customers buy credit packs. Each page clone uses 1 credit. Prices range from $25 (2 credits) to $500 (100 credits).
+                </p>
+              </div>
+
+              <!-- Quick Links -->
+              <div style="margin-top: 24px; text-align: center;">
+                <p style="color: #94a3b8; font-size: 14px; margin: 0 0 12px 0;">Helpful Links:</p>
+                <a href="https://hlextras.com/login" style="color: #34d399; margin: 0 12px; text-decoration: none;">Affiliate Dashboard</a>
+                <span style="color: #475569;">|</span>
+                <a href="https://hlextras.com/cloner" style="color: #34d399; margin: 0 12px; text-decoration: none;">Product Page</a>
+                <span style="color: #475569;">|</span>
+                <a href="https://hlextras.com/download" style="color: #34d399; margin: 0 12px; text-decoration: none;">Extension Download</a>
               </div>
             </div>
 
