@@ -397,6 +397,8 @@ export async function sendAffiliateWelcomeEmail({
   const setupUrl = `https://hlextras.com/affiliate/setup?token=${setupToken}`;
   const referralUrl = `https://hlextras.com/cloner?ref=${affiliateCode}`;
   const commissionPercent = Math.round(commissionRate * 100);
+  // Extract first name from full name
+  const firstName = name.split(' ')[0];
 
   try {
     const { error } = await resend.emails.send({
@@ -420,10 +422,18 @@ export async function sendAffiliateWelcomeEmail({
 
             <!-- Main Content -->
             <div style="background-color: #1e293b; border-radius: 16px; padding: 32px; border: 1px solid #334155;">
-              <h2 style="color: #ffffff; font-size: 20px; margin: 0 0 8px 0;">Hi ${name}!</h2>
+              <h2 style="color: #ffffff; font-size: 20px; margin: 0 0 8px 0;">Hi ${firstName}!</h2>
               <p style="color: #94a3b8; margin: 0 0 24px 0;">
                 You've been invited to join the HLExtras affiliate program. Earn <strong style="color: #34d399;">${commissionPercent}% commission</strong> on every sale you refer!
               </p>
+
+              <!-- Free Credits Box -->
+              <div style="background-color: #059669; background: linear-gradient(135deg, #059669, #0d9488); border-radius: 12px; padding: 20px; margin: 0 0 24px 0;">
+                <p style="color: #ffffff; font-weight: bold; font-size: 16px; margin: 0 0 8px 0;">🎁 Welcome Gift: 5 Free Credits!</p>
+                <p style="color: #d1fae5; margin: 0; font-size: 14px;">
+                  We've added <strong>5 free credits</strong> to your account so you can try HL Cloner yourself. Experience the product firsthand - it'll help you promote it better!
+                </p>
+              </div>
 
               <!-- Commission Box -->
               <div style="background-color: #0f172a; border-radius: 12px; padding: 20px; margin: 24px 0; border: 1px solid #334155;">
