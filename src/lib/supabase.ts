@@ -448,7 +448,7 @@ export async function createAffiliate(data: CreateAffiliateData): Promise<{ succ
         name: data.name,
         email: data.email,
         code: code,
-        commission_rate: data.commission_rate || 0.20,
+        commission_rate: data.commission_rate || 0.30,
         status: 'active',
         total_earned: 0,
         total_paid: 0
@@ -890,7 +890,7 @@ export async function createAffiliateWithSetupToken(data: CreateAffiliateData): 
         name: data.name,
         email: data.email,
         code: code,
-        commission_rate: data.commission_rate || 0.20,
+        commission_rate: data.commission_rate || 0.30,
         status: 'active',
         total_earned: 0,
         total_paid: 0,

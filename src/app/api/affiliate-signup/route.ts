@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const result = await createAffiliateWithSetupToken({
       name: name.trim(),
       email: email.trim().toLowerCase(),
-      commission_rate: 0.20, // 20% default commission
+      commission_rate: 0.30, // 30% default commission
     });
 
     if (!result.success || !result.affiliate) {

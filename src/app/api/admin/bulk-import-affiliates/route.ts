@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     let failed = 0;
 
     // Default values
-    const DEFAULT_COMMISSION_RATE = 0.20; // 20%
+    const DEFAULT_COMMISSION_RATE = 0.30; // 30%
     const DEFAULT_CREDITS = 5;
 
     // Process each affiliate

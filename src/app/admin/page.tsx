@@ -62,7 +62,7 @@ export default function AdminDashboard() {
   // Affiliate form states
   const [affName, setAffName] = useState('');
   const [affEmail, setAffEmail] = useState('');
-  const [affCommissionRate, setAffCommissionRate] = useState(20);
+  const [affCommissionRate, setAffCommissionRate] = useState(30);
   const [affCredits, setAffCredits] = useState(5); // Default 5 free credits for affiliates
   const [affStatus, setAffStatus] = useState<'active' | 'inactive'>('active');
   const [previewCode, setPreviewCode] = useState('');
@@ -285,7 +285,7 @@ export default function AdminDashboard() {
     setEditingAffiliate(null);
     setAffName('');
     setAffEmail('');
-    setAffCommissionRate(20);
+    setAffCommissionRate(30);
     setAffCredits(5); // Default 5 free credits
     setAffStatus('active');
     setPreviewCode('');
@@ -1812,7 +1812,7 @@ John Smith,john@example.com
 Jane Doe,jane@example.com`}
                   </pre>
                   <p className="text-slate-500 text-xs mt-2">
-                    All affiliates will receive 20% commission and 5 free credits. Welcome emails will be sent automatically.
+                    All affiliates will receive 30% commission and 5 free credits. Welcome emails will be sent automatically.
                   </p>
                 </div>
 

@@ -97,7 +97,7 @@ function AffiliateSignupModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                 </div>
                 <h2 className="text-xl font-bold text-white mb-2">Become an Affiliate</h2>
                 <p className="text-slate-400 text-sm">
-                  Earn 20% commission on every sale you refer. Get your unique link and start earning!
+                  Earn 30% commission on every sale you refer. Get your unique link and start earning!
                 </p>
               </div>
 
