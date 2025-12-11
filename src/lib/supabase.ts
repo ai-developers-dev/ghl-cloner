@@ -793,6 +793,60 @@ export async function getAffiliateByEmail(email: string): Promise<Affiliate | nu
   }
 }
 
+// Get affiliate by ID
+export async function getAffiliateById(id: string): Promise<Affiliate | null> {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/affiliates?id=eq.${encodeURIComponent(id)}&select=*`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      }
+    });
+
+    if (!response.ok) {
+      console.error('getAffiliateById failed:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) && data.length > 0 ? data[0] : null;
+  } catch (error) {
+    console.error('getAffiliateById exception:', error);
+    return null;
+  }
+}
+
+// Regenerate setup token for an affiliate (for resending welcome email)
+export async function regenerateAffiliateSetupToken(affiliateId: string): Promise<{ success: boolean; setupToken?: string; error?: string }> {
+  const setupToken = generateSetupToken();
+  const tokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/affiliates?id=eq.${affiliateId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        setup_token: setupToken,
+        setup_token_expires: tokenExpires.toISOString(),
+        updated_at: new Date().toISOString()
+      })
+    });
+
+    if (!response.ok) {
+      return { success: false, error: 'Failed to update setup token' };
+    }
+
+    return { success: true, setupToken };
+  } catch (error) {
+    console.error('regenerateAffiliateSetupToken exception:', error);
+    return { success: false, error: 'Network error updating setup token' };
+  }
+}
+
 // Get affiliate by setup token
 export async function getAffiliateBySetupToken(token: string): Promise<Affiliate | null> {
   try {
@@ -941,29 +995,6 @@ export async function createAffiliateWithSetupToken(data: CreateAffiliateData): 
   } catch (error) {
     console.error('createAffiliateWithSetupToken exception:', error);
     return { success: false, error: 'Network error creating affiliate' };
-  }
-}
-
-// Get affiliate by ID
-export async function getAffiliateById(id: string): Promise<Affiliate | null> {
-  try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/affiliates?id=eq.${id}&select=*`, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-      }
-    });
-
-    if (!response.ok) {
-      console.error('getAffiliateById failed:', response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    return Array.isArray(data) && data.length > 0 ? data[0] : null;
-  } catch (error) {
-    console.error('getAffiliateById exception:', error);
-    return null;
   }
 }
 

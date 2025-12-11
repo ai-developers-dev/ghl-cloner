@@ -67,6 +67,7 @@ export default function AdminDashboard() {
   const [affCommissionRate, setAffCommissionRate] = useState(30);
   const [affCredits, setAffCredits] = useState(5); // Default 5 free credits for affiliates
   const [affStatus, setAffStatus] = useState<'active' | 'inactive'>('active');
+  const [resendingEmailFor, setResendingEmailFor] = useState<string | null>(null); // Track which affiliate email is being resent
   const [previewCode, setPreviewCode] = useState('');
 
   // CSV Upload states
@@ -321,6 +322,33 @@ export default function AdminDashboard() {
     setSelectedAffiliate(affiliate);
     setSelectedCommissions([]);
     setShowCommissionModal(true);
+  };
+
+  // Resend welcome email to affiliate
+  const handleResendWelcomeEmail = async (affiliate: Affiliate) => {
+    if (resendingEmailFor) return; // Prevent multiple clicks
+
+    setResendingEmailFor(affiliate.id);
+    try {
+      const response = await fetch('/api/admin/resend-affiliate-welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ affiliateId: affiliate.id }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Welcome email resent to ${affiliate.email}`);
+      } else {
+        alert(`Failed to resend email: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('Error resending welcome email:', err);
+      alert('Failed to resend email. Please try again.');
+    } finally {
+      setResendingEmailFor(null);
+    }
   };
 
   // Handle create/edit affiliate
@@ -917,6 +945,14 @@ export default function AdminDashboard() {
                             title="View Commissions"
                           >
                             💰
+                          </button>
+                          <button
+                            onClick={() => handleResendWelcomeEmail(affiliate)}
+                            disabled={resendingEmailFor === affiliate.id}
+                            className={`p-2 bg-slate-800 rounded-lg hover:bg-emerald-800 text-sm ${resendingEmailFor === affiliate.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title="Resend Welcome Email"
+                          >
+                            {resendingEmailFor === affiliate.id ? '⏳' : '📧'}
                           </button>
                           <button
                             onClick={() => openEditAffiliateModal(affiliate)}
