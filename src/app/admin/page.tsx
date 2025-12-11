@@ -67,6 +67,17 @@ export default function AdminDashboard() {
   const [affStatus, setAffStatus] = useState<'active' | 'inactive'>('active');
   const [previewCode, setPreviewCode] = useState('');
 
+  // CSV Upload states
+  const [showCsvModal, setShowCsvModal] = useState(false);
+  const [csvData, setCsvData] = useState<{ name: string; email: string }[]>([]);
+  const [csvErrors, setCsvErrors] = useState<string[]>([]);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvResults, setCsvResults] = useState<{
+    imported: number;
+    failed: number;
+    errors: { email: string; name: string; error: string }[];
+  } | null>(null);
+
   // Modal states
   const [showUserModal, setShowUserModal] = useState(false);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
@@ -620,12 +631,25 @@ export default function AdminDashboard() {
               </button>
             )}
             {activeTab === 'affiliates' && (
-              <button
-                onClick={openCreateAffiliateModal}
-                className="px-5 py-2.5 rounded-lg font-semibold bg-gradient-to-r from-emerald-500 to-cyan-500"
-              >
-                + New Affiliate
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={openCreateAffiliateModal}
+                  className="px-5 py-2.5 rounded-lg font-semibold bg-gradient-to-r from-emerald-500 to-cyan-500"
+                >
+                  + New Affiliate
+                </button>
+                <button
+                  onClick={() => {
+                    setCsvData([]);
+                    setCsvErrors([]);
+                    setCsvResults(null);
+                    setShowCsvModal(true);
+                  }}
+                  className="px-5 py-2.5 rounded-lg font-semibold bg-slate-900 border border-slate-700 hover:bg-slate-800"
+                >
+                  Upload CSV
+                </button>
+              </div>
             )}
             <button
               onClick={fetchData}
@@ -1713,6 +1737,251 @@ export default function AdminDashboard() {
                   {formLoading ? 'Processing...' : 'Mark Selected as Paid'}
                 </button>
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* CSV Upload Modal */}
+      {showCsvModal && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={() => !csvImporting && setShowCsvModal(false)}
+        >
+          <div
+            className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Upload Affiliates CSV</h2>
+              <button
+                onClick={() => !csvImporting && setShowCsvModal(false)}
+                disabled={csvImporting}
+                className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 disabled:opacity-50"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Results View */}
+            {csvResults ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-lg p-4 text-center">
+                    <div className="text-3xl font-bold text-emerald-400">{csvResults.imported}</div>
+                    <div className="text-emerald-400/70 text-sm">Successfully Imported</div>
+                  </div>
+                  <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 text-center">
+                    <div className="text-3xl font-bold text-red-400">{csvResults.failed}</div>
+                    <div className="text-red-400/70 text-sm">Failed</div>
+                  </div>
+                </div>
+
+                {csvResults.errors.length > 0 && (
+                  <div className="bg-slate-800 rounded-lg p-4 max-h-48 overflow-y-auto">
+                    <h4 className="text-sm font-semibold text-red-400 mb-2">Errors:</h4>
+                    <div className="space-y-1">
+                      {csvResults.errors.map((err, i) => (
+                        <div key={i} className="text-sm text-slate-400">
+                          <span className="text-slate-500">{err.name} ({err.email}):</span> {err.error}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => {
+                    setShowCsvModal(false);
+                    fetchData();
+                  }}
+                  className="w-full py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg font-semibold"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Instructions */}
+                <div className="bg-slate-800 rounded-lg p-4 mb-4">
+                  <h4 className="font-semibold mb-2">CSV Format</h4>
+                  <p className="text-slate-400 text-sm mb-2">Upload a CSV file with Name and Email columns:</p>
+                  <pre className="bg-slate-900 rounded p-2 text-xs text-emerald-400 overflow-x-auto">
+{`Name,Email
+John Smith,john@example.com
+Jane Doe,jane@example.com`}
+                  </pre>
+                  <p className="text-slate-500 text-xs mt-2">
+                    All affiliates will receive 20% commission and 5 free credits. Welcome emails will be sent automatically.
+                  </p>
+                </div>
+
+                {/* File Input */}
+                <div className="mb-4">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const text = event.target?.result as string;
+                        const lines = text.split(/\r?\n/).filter((line) => line.trim());
+                        const parsed: { name: string; email: string }[] = [];
+                        const errors: string[] = [];
+
+                        // Check if first line is header
+                        const firstLine = lines[0]?.toLowerCase();
+                        const hasHeader = firstLine?.includes('name') && firstLine?.includes('email');
+                        const startIndex = hasHeader ? 1 : 0;
+
+                        for (let i = startIndex; i < lines.length; i++) {
+                          const line = lines[i].trim();
+                          if (!line) continue;
+
+                          // Parse CSV line (handle quoted values)
+                          const matches = line.match(/(?:^|,)("(?:[^"]*(?:""[^"]*)*)"|[^,]*)/g);
+                          if (!matches || matches.length < 2) {
+                            errors.push(`Line ${i + 1}: Invalid format`);
+                            continue;
+                          }
+
+                          const cleanValue = (val: string) => {
+                            return val.replace(/^,/, '').replace(/^"|"$/g, '').replace(/""/g, '"').trim();
+                          };
+
+                          const name = cleanValue(matches[0]);
+                          const email = cleanValue(matches[1]);
+
+                          if (!name) {
+                            errors.push(`Line ${i + 1}: Missing name`);
+                            continue;
+                          }
+                          if (!email) {
+                            errors.push(`Line ${i + 1}: Missing email`);
+                            continue;
+                          }
+
+                          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                          if (!emailRegex.test(email)) {
+                            errors.push(`Line ${i + 1}: Invalid email format (${email})`);
+                            continue;
+                          }
+
+                          parsed.push({ name, email: email.toLowerCase() });
+                        }
+
+                        setCsvData(parsed);
+                        setCsvErrors(errors);
+                      };
+                      reader.readAsText(file);
+                    }}
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-emerald-500 file:text-white file:font-semibold file:cursor-pointer"
+                  />
+                </div>
+
+                {/* Validation Errors */}
+                {csvErrors.length > 0 && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4 max-h-32 overflow-y-auto">
+                    <h4 className="text-sm font-semibold text-red-400 mb-1">Validation Errors:</h4>
+                    <div className="text-sm text-red-400/80 space-y-0.5">
+                      {csvErrors.map((err, i) => (
+                        <div key={i}>{err}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Preview Table */}
+                {csvData.length > 0 && (
+                  <div className="flex-1 overflow-auto mb-4">
+                    <div className="bg-slate-800 rounded-lg overflow-hidden">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-slate-700">
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-400">#</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-400">Name</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-slate-400">Email</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {csvData.slice(0, 50).map((row, i) => (
+                            <tr key={i} className="border-t border-slate-700">
+                              <td className="px-4 py-2 text-sm text-slate-500">{i + 1}</td>
+                              <td className="px-4 py-2 text-sm">{row.name}</td>
+                              <td className="px-4 py-2 text-sm text-slate-400">{row.email}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {csvData.length > 50 && (
+                        <div className="px-4 py-2 text-sm text-slate-500 text-center border-t border-slate-700">
+                          ... and {csvData.length - 50} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowCsvModal(false)}
+                    disabled={csvImporting}
+                    className="flex-1 py-3 bg-slate-800 rounded-lg font-semibold disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (csvData.length === 0) return;
+
+                      setCsvImporting(true);
+                      try {
+                        const response = await fetch('/api/admin/bulk-import-affiliates', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ affiliates: csvData }),
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                          setCsvResults({
+                            imported: result.imported,
+                            failed: result.failed,
+                            errors: result.results
+                              .filter((r: { success: boolean }) => !r.success)
+                              .map((r: { email: string; name: string; error: string }) => ({
+                                email: r.email,
+                                name: r.name,
+                                error: r.error,
+                              })),
+                          });
+                        } else {
+                          setError(result.error || 'Import failed');
+                        }
+                      } catch (err) {
+                        setError('Failed to import affiliates');
+                      }
+                      setCsvImporting(false);
+                    }}
+                    disabled={csvImporting || csvData.length === 0}
+                    className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg font-semibold disabled:opacity-50"
+                  >
+                    {csvImporting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Importing...
+                      </span>
+                    ) : (
+                      `Import ${csvData.length} Affiliate${csvData.length !== 1 ? 's' : ''}`
+                    )}
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>

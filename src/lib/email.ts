@@ -288,7 +288,7 @@ interface NewAffiliateAdminNotificationParams {
   affiliateEmail: string;
   affiliateCode: string;
   commissionRate: number;
-  source: 'Public Signup' | 'Admin Created';
+  source: 'Public Signup' | 'Admin Created' | 'CSV Import';
 }
 
 export async function sendNewAffiliateAdminNotification({
