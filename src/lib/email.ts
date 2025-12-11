@@ -534,3 +534,107 @@ export async function sendAffiliateWelcomeEmail({
     return { success: false, error: 'Failed to send affiliate welcome email' };
   }
 }
+
+// Admin notification when affiliate uses a credit
+interface AffiliateCreditUsageParams {
+  affiliateName: string;
+  affiliateEmail: string;
+  remainingCredits: number;
+  funnelId: string;
+  stepId: string;
+}
+
+export async function sendAffiliateCreditUsageNotification({
+  affiliateName,
+  affiliateEmail,
+  remainingCredits,
+  funnelId,
+  stepId,
+}: AffiliateCreditUsageParams): Promise<{ success: boolean; error?: string }> {
+  const timestamp = new Date().toLocaleString('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'America/New_York',
+  });
+
+  try {
+    const { error } = await resend.emails.send({
+      from: 'HLExtras <noreply@hlextras.com>',
+      to: ADMIN_EMAIL,
+      subject: `Credit Used: ${affiliateName} (${remainingCredits} remaining)`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0f172a;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 40px;">
+              <div style="display: inline-block; width: 60px; height: 60px; border-radius: 12px; background: linear-gradient(135deg, #34d399, #06b6d4); line-height: 60px; font-size: 24px; font-weight: bold; color: #0f172a;">HE</div>
+              <h1 style="color: #ffffff; font-size: 24px; margin: 16px 0 0 0;">Affiliate Credit Used</h1>
+            </div>
+
+            <!-- Credit Usage Details -->
+            <div style="background-color: #1e293b; border-radius: 16px; padding: 32px; border: 1px solid #334155;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="color: #94a3b8; padding: 12px 0; border-bottom: 1px solid #334155;">Affiliate</td>
+                  <td style="color: #ffffff; padding: 12px 0; border-bottom: 1px solid #334155; text-align: right; font-weight: bold;">${affiliateName}</td>
+                </tr>
+                <tr>
+                  <td style="color: #94a3b8; padding: 12px 0; border-bottom: 1px solid #334155;">Email</td>
+                  <td style="color: #34d399; padding: 12px 0; border-bottom: 1px solid #334155; text-align: right;">${affiliateEmail}</td>
+                </tr>
+                <tr>
+                  <td style="color: #94a3b8; padding: 12px 0; border-bottom: 1px solid #334155;">Date/Time</td>
+                  <td style="color: #ffffff; padding: 12px 0; border-bottom: 1px solid #334155; text-align: right;">${timestamp}</td>
+                </tr>
+                <tr>
+                  <td style="color: #94a3b8; padding: 12px 0; border-bottom: 1px solid #334155;">Remaining Credits</td>
+                  <td style="color: ${remainingCredits <= 1 ? '#f87171' : '#34d399'}; padding: 12px 0; border-bottom: 1px solid #334155; text-align: right; font-weight: bold; font-size: 20px;">${remainingCredits}</td>
+                </tr>
+                <tr>
+                  <td style="color: #94a3b8; padding: 12px 0; border-bottom: 1px solid #334155;">Funnel ID</td>
+                  <td style="color: #ffffff; padding: 12px 0; border-bottom: 1px solid #334155; text-align: right; font-family: monospace; font-size: 12px;">${funnelId}</td>
+                </tr>
+                <tr>
+                  <td style="color: #94a3b8; padding: 12px 0;">Step ID</td>
+                  <td style="color: #ffffff; padding: 12px 0; text-align: right; font-family: monospace; font-size: 12px;">${stepId}</td>
+                </tr>
+              </table>
+            </div>
+
+            ${remainingCredits <= 1 ? `
+            <!-- Low Credits Warning -->
+            <div style="background-color: #7f1d1d; border-radius: 12px; padding: 16px; margin-top: 16px; text-align: center;">
+              <p style="color: #fca5a5; margin: 0; font-weight: bold;">Low Credits Warning</p>
+              <p style="color: #fca5a5; margin: 8px 0 0 0; font-size: 14px;">This affiliate ${remainingCredits === 0 ? 'has no credits left' : 'only has 1 credit remaining'}!</p>
+            </div>
+            ` : ''}
+
+            <!-- CTA -->
+            <div style="text-align: center; margin-top: 32px;">
+              <a href="https://hlextras.com/admin" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #34d399, #06b6d4); color: #0f172a; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                View in Admin Dashboard
+              </a>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error('Affiliate credit usage notification error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Affiliate credit usage notification error:', error);
+    return { success: false, error: 'Failed to send affiliate credit usage notification' };
+  }
+}

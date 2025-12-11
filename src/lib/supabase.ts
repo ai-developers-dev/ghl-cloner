@@ -217,7 +217,7 @@ export async function fetchTransactions(): Promise<Transaction[]> {
   return Array.isArray(data) ? data : [];
 }
 
-export async function useCredit(licenseKey: string, funnelId: string, stepId: string): Promise<{ success: boolean; remaining_credits?: number; error?: string }> {
+export async function useCredit(licenseKey: string, funnelId: string, stepId: string): Promise<{ success: boolean; remaining_credits?: number; error?: string; user?: { name: string; email: string; isAffiliate: boolean } }> {
   const user = await getUser(licenseKey);
   if (!user) return { success: false, error: 'User not found' };
   if (user.credits <= 0) return { success: false, error: 'No credits remaining' };
@@ -251,7 +251,15 @@ export async function useCredit(licenseKey: string, funnelId: string, stepId: st
     })
   });
 
-  return { success: true, remaining_credits: newCredits };
+  return {
+    success: true,
+    remaining_credits: newCredits,
+    user: {
+      name: user.name || 'Unknown',
+      email: user.email || '',
+      isAffiliate: user.commission_rate !== null && user.commission_rate !== undefined
+    }
+  };
 }
 
 // Create a new user

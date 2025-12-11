@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { useCredit } from '@/lib/supabase';
+import { sendAffiliateCreditUsageNotification } from '@/lib/email';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -44,6 +45,17 @@ export async function POST(request: NextRequest) {
         { success: false, error: result.error },
         { status: result.error === 'User not found' ? 404 : 402, headers: corsHeaders }
       );
+    }
+
+    // Send admin notification if user is an affiliate (non-blocking)
+    if (result.user?.isAffiliate) {
+      sendAffiliateCreditUsageNotification({
+        affiliateName: result.user.name,
+        affiliateEmail: result.user.email,
+        remainingCredits: result.remaining_credits || 0,
+        funnelId: funnel_id || 'unknown',
+        stepId: step_id || 'unknown',
+      }).catch(err => console.error('Failed to send affiliate credit usage notification:', err));
     }
 
     return NextResponse.json({
