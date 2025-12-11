@@ -15,7 +15,6 @@ import {
   Affiliate,
   AffiliateCommission,
   fetchAffiliates,
-  createAffiliateWithSetupToken,
   updateAffiliate,
   deleteAffiliate,
   fetchCommissions,
@@ -28,7 +27,6 @@ import {
   getAllSalesReports,
   fetchSales,
 } from '@/lib/supabase';
-import { sendAffiliateWelcomeEmail, sendNewAffiliateAdminNotification } from '@/lib/email';
 
 export default function AdminDashboard() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -332,58 +330,30 @@ export default function AdminDashboard() {
           return;
         }
       } else {
-        // Create new affiliate with setup token
-        const result = await createAffiliateWithSetupToken({
-          name: affName,
-          email: affEmail,
-          commission_rate: affCommissionRate / 100,
+        // Create new affiliate via API (server-side) to ensure emails are sent
+        const response = await fetch('/api/admin/create-affiliate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: affName,
+            email: affEmail,
+            commissionRate: affCommissionRate / 100,
+            credits: affCredits,
+          }),
         });
-        if (!result.success || !result.affiliate || !result.setupToken) {
+
+        const result = await response.json();
+
+        if (!result.success) {
           setError(result.error || 'Failed to create affiliate');
           setFormLoading(false);
           return;
         }
 
-        // Also create a user account with credits so the affiliate can use the extension
-        const userResult = await createUser({
-          name: affName,
-          email: affEmail,
-          credits: affCredits,
-          status: 'active',
-          commission_rate: affCommissionRate / 100,
-        });
-        if (!userResult.success) {
-          console.error('Failed to create user account for affiliate:', userResult.error);
-          // Don't fail - affiliate was created, they just won't have credits yet
-        }
-
-        // Send welcome email with setup link
-        const emailResult = await sendAffiliateWelcomeEmail({
-          email: result.affiliate.email,
-          name: result.affiliate.name,
-          setupToken: result.setupToken,
-          affiliateCode: result.affiliate.code,
-          commissionRate: result.affiliate.commission_rate,
-        });
-
-        if (!emailResult.success) {
-          console.error('Failed to send welcome email:', emailResult.error);
-          // Don't fail the whole operation, just log the error
-        }
-
-        // Send admin notification
-        const adminNotifyResult = await sendNewAffiliateAdminNotification({
-          affiliateName: result.affiliate.name,
-          affiliateEmail: result.affiliate.email,
-          affiliateCode: result.affiliate.code,
-          commissionRate: result.affiliate.commission_rate,
-          source: 'Admin Created',
-        });
-
-        if (!adminNotifyResult.success) {
-          console.error('Failed to send admin notification:', adminNotifyResult.error);
-          // Don't fail the whole operation, just log the error
-        }
+        // Log email status for debugging
+        console.log('Affiliate created:', result.affiliate?.code);
+        console.log('Welcome email sent:', result.emailSent);
+        console.log('Admin notified:', result.adminNotified);
       }
       setShowAffiliateModal(false);
       fetchData();
