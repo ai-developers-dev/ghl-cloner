@@ -1828,14 +1828,20 @@ Jane Doe,jane@example.com`}
                       const reader = new FileReader();
                       reader.onload = (event) => {
                         const text = event.target?.result as string;
-                        const lines = text.split(/\r?\n/).filter((line) => line.trim());
+                        const lines = text.split(/\r?\n/).filter((line) => line.trim() && line.trim() !== ',');
                         const parsed: { name: string; email: string }[] = [];
                         const errors: string[] = [];
 
-                        // Check if first line is header
-                        const firstLine = lines[0]?.toLowerCase();
-                        const hasHeader = firstLine?.includes('name') && firstLine?.includes('email');
-                        const startIndex = hasHeader ? 1 : 0;
+                        // Find header row (could be first non-empty line)
+                        let headerIndex = -1;
+                        for (let i = 0; i < lines.length; i++) {
+                          const line = lines[i].toLowerCase();
+                          if (line.includes('name') && line.includes('email')) {
+                            headerIndex = i;
+                            break;
+                          }
+                        }
+                        const startIndex = headerIndex >= 0 ? headerIndex + 1 : 0;
 
                         for (let i = startIndex; i < lines.length; i++) {
                           const line = lines[i].trim();
