@@ -65,6 +65,7 @@ export default function AdminDashboard() {
   const [affName, setAffName] = useState('');
   const [affEmail, setAffEmail] = useState('');
   const [affCommissionRate, setAffCommissionRate] = useState(20);
+  const [affCredits, setAffCredits] = useState(5); // Default 5 free credits for affiliates
   const [affStatus, setAffStatus] = useState<'active' | 'inactive'>('active');
   const [previewCode, setPreviewCode] = useState('');
 
@@ -276,6 +277,7 @@ export default function AdminDashboard() {
     setAffName('');
     setAffEmail('');
     setAffCommissionRate(20);
+    setAffCredits(5); // Default 5 free credits
     setAffStatus('active');
     setPreviewCode('');
     setShowAffiliateModal(true);
@@ -340,6 +342,19 @@ export default function AdminDashboard() {
           setError(result.error || 'Failed to create affiliate');
           setFormLoading(false);
           return;
+        }
+
+        // Also create a user account with credits so the affiliate can use the extension
+        const userResult = await createUser({
+          name: affName,
+          email: affEmail,
+          credits: affCredits,
+          status: 'active',
+          commission_rate: affCommissionRate / 100,
+        });
+        if (!userResult.success) {
+          console.error('Failed to create user account for affiliate:', userResult.error);
+          // Don't fail - affiliate was created, they just won't have credits yet
         }
 
         // Send welcome email with setup link
@@ -1460,6 +1475,21 @@ export default function AdminDashboard() {
                   className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white"
                 />
               </div>
+
+              {!editingAffiliate && (
+                <div>
+                  <label className="block text-slate-400 text-sm mb-1">Initial Credits</label>
+                  <input
+                    type="number"
+                    value={affCredits}
+                    onChange={(e) => setAffCredits(Math.max(0, parseInt(e.target.value) || 0))}
+                    min="0"
+                    placeholder="5"
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white"
+                  />
+                  <p className="text-slate-500 text-xs mt-1">Free credits for the affiliate to try the product</p>
+                </div>
+              )}
 
               {editingAffiliate && (
                 <div>
