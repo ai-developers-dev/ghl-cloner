@@ -135,27 +135,34 @@ export async function POST(request: NextRequest) {
           // Don't fail the affiliate creation, just log
         }
 
-        // Send welcome email (non-blocking)
-        sendAffiliateWelcomeEmail({
-          email: affiliateResult.affiliate.email,
-          name: affiliateResult.affiliate.name,
-          setupToken: affiliateResult.setupToken,
-          affiliateCode: affiliateResult.affiliate.code,
-          commissionRate: affiliateResult.affiliate.commission_rate,
-        }).catch((err) => {
+        // Send welcome email (blocking to ensure delivery)
+        try {
+          await sendAffiliateWelcomeEmail({
+            email: affiliateResult.affiliate.email,
+            name: affiliateResult.affiliate.name,
+            setupToken: affiliateResult.setupToken,
+            affiliateCode: affiliateResult.affiliate.code,
+            commissionRate: affiliateResult.affiliate.commission_rate,
+          });
+        } catch (err) {
           console.error(`Failed to send welcome email to ${trimmedEmail}:`, err);
-        });
+        }
 
-        // Send admin notification (non-blocking)
-        sendNewAffiliateAdminNotification({
-          affiliateName: affiliateResult.affiliate.name,
-          affiliateEmail: affiliateResult.affiliate.email,
-          affiliateCode: affiliateResult.affiliate.code,
-          commissionRate: affiliateResult.affiliate.commission_rate,
-          source: 'CSV Import',
-        }).catch((err) => {
+        // Send admin notification (blocking to ensure delivery)
+        try {
+          await sendNewAffiliateAdminNotification({
+            affiliateName: affiliateResult.affiliate.name,
+            affiliateEmail: affiliateResult.affiliate.email,
+            affiliateCode: affiliateResult.affiliate.code,
+            commissionRate: affiliateResult.affiliate.commission_rate,
+            source: 'CSV Import',
+          });
+        } catch (err) {
           console.error(`Failed to send admin notification for ${trimmedEmail}:`, err);
-        });
+        }
+
+        // Small delay between affiliates to avoid Resend rate limiting
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         results.push({
           email: trimmedEmail,
