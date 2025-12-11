@@ -21,6 +21,8 @@ import {
   updateCommissionStatus,
   markCommissionsPaid,
   generateAffiliateCode,
+  getUserByEmail,
+  updateUserByEmail,
   // Sales/Reports imports
   Sale,
   SalesReport,
@@ -293,13 +295,18 @@ export default function AdminDashboard() {
   };
 
   // Open edit affiliate modal
-  const openEditAffiliateModal = (affiliate: Affiliate) => {
+  const openEditAffiliateModal = async (affiliate: Affiliate) => {
     setEditingAffiliate(affiliate);
     setAffName(affiliate.name);
     setAffEmail(affiliate.email);
     setAffCommissionRate(Math.round(affiliate.commission_rate * 100));
     setAffStatus(affiliate.status);
     setPreviewCode(affiliate.code);
+
+    // Fetch the user's credits
+    const user = await getUserByEmail(affiliate.email);
+    setAffCredits(user?.credits || 0);
+
     setShowAffiliateModal(true);
   };
 
@@ -339,6 +346,17 @@ export default function AdminDashboard() {
           setError(result.error || 'Failed to update affiliate');
           setFormLoading(false);
           return;
+        }
+
+        // Also update the user's credits and commission rate
+        const userResult = await updateUserByEmail(editingAffiliate.email, {
+          credits: affCredits,
+          commission_rate: affCommissionRate / 100,
+          name: affName,
+        });
+        if (!userResult.success) {
+          console.error('Failed to update user credits:', userResult.error);
+          // Don't fail the whole operation, affiliate was updated
         }
       } else {
         // Create new affiliate via API (server-side) to ensure emails are sent
@@ -1470,20 +1488,22 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              {!editingAffiliate && (
-                <div>
-                  <label className="block text-slate-400 text-sm mb-1">Initial Credits</label>
-                  <input
-                    type="number"
-                    value={affCredits}
-                    onChange={(e) => setAffCredits(Math.max(0, parseInt(e.target.value) || 0))}
-                    min="0"
-                    placeholder="5"
-                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white"
-                  />
-                  <p className="text-slate-500 text-xs mt-1">Free credits for the affiliate to try the product</p>
-                </div>
-              )}
+              <div>
+                <label className="block text-slate-400 text-sm mb-1">
+                  {editingAffiliate ? 'Credits' : 'Initial Credits'}
+                </label>
+                <input
+                  type="number"
+                  value={affCredits}
+                  onChange={(e) => setAffCredits(Math.max(0, parseInt(e.target.value) || 0))}
+                  min="0"
+                  placeholder="5"
+                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white"
+                />
+                <p className="text-slate-500 text-xs mt-1">
+                  {editingAffiliate ? 'Credits available to use the extension' : 'Free credits for the affiliate to try the product'}
+                </p>
+              </div>
 
               {editingAffiliate && (
                 <div>

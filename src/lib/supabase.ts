@@ -183,6 +183,29 @@ export async function fetchUsers(): Promise<User[]> {
   return Array.isArray(data) ? data : [];
 }
 
+export async function updateUserByEmail(email: string, data: Partial<User>): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/users?email=eq.${encodeURIComponent(email)}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ ...data, updated_at: new Date().toISOString() })
+    });
+
+    if (!response.ok) {
+      return { success: false, error: 'Failed to update user' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('updateUserByEmail exception:', error);
+    return { success: false, error: 'Network error updating user' };
+  }
+}
+
 export async function fetchTransactions(): Promise<Transaction[]> {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/transactions?select=*,users(email,name)&order=created_at.desc&limit=50`, {
     headers: {
