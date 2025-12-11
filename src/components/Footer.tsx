@@ -197,9 +197,9 @@ export default function Footer({ showDisclaimer = false }: FooterProps) {
             <span className="font-bold text-white">HLExtras</span>
           </div>
           <div className="flex gap-6 items-center flex-wrap justify-center">
-            <a href="#" className="text-slate-500 text-sm hover:text-slate-300">Privacy</a>
-            <a href="#" className="text-slate-500 text-sm hover:text-slate-300">Terms</a>
-            <a href="#" className="text-slate-500 text-sm hover:text-slate-300">Contact</a>
+            <a href="/privacy" className="text-slate-500 text-sm hover:text-slate-300">Privacy</a>
+            <a href="/terms" className="text-slate-500 text-sm hover:text-slate-300">Terms</a>
+            <a href="mailto:support@hlextras.com" className="text-slate-500 text-sm hover:text-slate-300">Contact</a>
             <button
               onClick={() => setShowAffiliateModal(true)}
               className="text-emerald-400 text-sm hover:text-emerald-300 transition-colors"
