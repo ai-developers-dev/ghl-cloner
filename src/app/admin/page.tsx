@@ -510,6 +510,12 @@ export default function AdminDashboard() {
     return `https://www.hlextras.com/?ref=${code}`;
   };
 
+  // Get credits for affiliate by email (from users table)
+  const getAffiliateCredits = (email: string): number => {
+    const user = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    return user?.credits || 0;
+  };
+
   // Copy to clipboard
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -883,6 +889,7 @@ export default function AdminDashboard() {
                   <tr className="bg-slate-800">
                     <th className="px-4 py-4 text-left font-semibold text-slate-400">Affiliate</th>
                     <th className="px-4 py-4 text-left font-semibold text-slate-400">Referral URL</th>
+                    <th className="px-4 py-4 text-center font-semibold text-slate-400">Credits</th>
                     <th className="px-4 py-4 text-center font-semibold text-slate-400">Commission</th>
                     <th className="px-4 py-4 text-center font-semibold text-slate-400">Earned</th>
                     <th className="px-4 py-4 text-center font-semibold text-slate-400">Paid</th>
@@ -910,6 +917,11 @@ export default function AdminDashboard() {
                             📋
                           </button>
                         </div>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className={`font-semibold ${getAffiliateCredits(affiliate.email) <= 1 ? 'text-red-400' : 'text-cyan-400'}`}>
+                          {getAffiliateCredits(affiliate.email)}
+                        </span>
                       </td>
                       <td className="px-4 py-4 text-center">
                         <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 font-semibold">
