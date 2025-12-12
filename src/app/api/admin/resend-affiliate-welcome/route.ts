@@ -7,7 +7,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { affiliateId } = body;
 
+    console.log('Resend welcome email request for affiliateId:', affiliateId);
+
     if (!affiliateId) {
+      console.error('Missing affiliateId in request');
       return NextResponse.json(
         { success: false, error: 'Affiliate ID is required' },
         { status: 400 }
@@ -16,7 +19,10 @@ export async function POST(request: NextRequest) {
 
     // Get affiliate by ID
     const affiliate = await getAffiliateById(affiliateId);
+    console.log('Found affiliate:', affiliate ? { id: affiliate.id, email: affiliate.email, name: affiliate.name } : 'null');
+
     if (!affiliate) {
+      console.error('Affiliate not found for ID:', affiliateId);
       return NextResponse.json(
         { success: false, error: 'Affiliate not found' },
         { status: 404 }
@@ -24,8 +30,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate new setup token
+    console.log('Generating new setup token for:', affiliate.email);
     const tokenResult = await regenerateAffiliateSetupToken(affiliateId);
+    console.log('Token generation result:', { success: tokenResult.success, hasToken: !!tokenResult.setupToken, error: tokenResult.error });
+
     if (!tokenResult.success || !tokenResult.setupToken) {
+      console.error('Failed to generate token:', tokenResult.error);
       return NextResponse.json(
         { success: false, error: tokenResult.error || 'Failed to generate setup token' },
         { status: 500 }
@@ -33,6 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send welcome email with new token
+    console.log('Sending welcome email to:', affiliate.email);
     const emailResult = await sendAffiliateWelcomeEmail({
       email: affiliate.email,
       name: affiliate.name,
@@ -40,14 +51,17 @@ export async function POST(request: NextRequest) {
       affiliateCode: affiliate.code,
       commissionRate: affiliate.commission_rate,
     });
+    console.log('Email send result:', emailResult);
 
     if (!emailResult.success) {
+      console.error('Email send failed:', emailResult.error);
       return NextResponse.json(
         { success: false, error: emailResult.error || 'Failed to send email' },
         { status: 500 }
       );
     }
 
+    console.log('Successfully resent welcome email to:', affiliate.email);
     return NextResponse.json({
       success: true,
       message: `Welcome email resent to ${affiliate.email}`,
