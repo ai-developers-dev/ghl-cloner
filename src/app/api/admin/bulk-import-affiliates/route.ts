@@ -6,6 +6,9 @@ import {
 } from '@/lib/supabase';
 import { sendAffiliateWelcomeEmail, sendNewAffiliateAdminNotification } from '@/lib/email';
 
+// Increase timeout for bulk operations (60 seconds on Pro plan, 10 on Hobby)
+export const maxDuration = 60;
+
 interface AffiliateInput {
   name: string;
   email: string;
@@ -17,6 +20,8 @@ interface ImportResult {
   success: boolean;
   error?: string;
   affiliateCode?: string;
+  welcomeEmailSent?: boolean;
+  adminNotificationSent?: boolean;
 }
 
 export async function POST(request: NextRequest) {
@@ -135,40 +140,55 @@ export async function POST(request: NextRequest) {
           // Don't fail the affiliate creation, just log
         }
 
+        // Track email results
+        let welcomeEmailSent = false;
+        let adminNotificationSent = false;
+
         // Send welcome email (blocking to ensure delivery)
+        console.log(`[${imported + 1}/${affiliates.length}] Sending welcome email to: ${trimmedEmail}`);
         try {
-          await sendAffiliateWelcomeEmail({
+          const welcomeResult = await sendAffiliateWelcomeEmail({
             email: affiliateResult.affiliate.email,
             name: affiliateResult.affiliate.name,
             setupToken: affiliateResult.setupToken,
             affiliateCode: affiliateResult.affiliate.code,
             commissionRate: affiliateResult.affiliate.commission_rate,
           });
+          welcomeEmailSent = welcomeResult.success;
+          console.log(`Welcome email to ${trimmedEmail}: ${welcomeResult.success ? 'SUCCESS' : 'FAILED - ' + welcomeResult.error}`);
         } catch (err) {
-          console.error(`Failed to send welcome email to ${trimmedEmail}:`, err);
+          console.error(`Welcome email EXCEPTION for ${trimmedEmail}:`, err);
         }
 
+        // Delay between emails to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         // Send admin notification (blocking to ensure delivery)
+        console.log(`Sending admin notification for: ${trimmedEmail}`);
         try {
-          await sendNewAffiliateAdminNotification({
+          const adminResult = await sendNewAffiliateAdminNotification({
             affiliateName: affiliateResult.affiliate.name,
             affiliateEmail: affiliateResult.affiliate.email,
             affiliateCode: affiliateResult.affiliate.code,
             commissionRate: affiliateResult.affiliate.commission_rate,
             source: 'CSV Import',
           });
+          adminNotificationSent = adminResult.success;
+          console.log(`Admin notification for ${trimmedEmail}: ${adminResult.success ? 'SUCCESS' : 'FAILED - ' + adminResult.error}`);
         } catch (err) {
-          console.error(`Failed to send admin notification for ${trimmedEmail}:`, err);
+          console.error(`Admin notification EXCEPTION for ${trimmedEmail}:`, err);
         }
 
-        // Small delay between affiliates to avoid Resend rate limiting
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Delay before next affiliate to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         results.push({
           email: trimmedEmail,
           name: name.trim(),
           success: true,
           affiliateCode: affiliateResult.affiliate.code,
+          welcomeEmailSent,
+          adminNotificationSent,
         });
         imported++;
 
